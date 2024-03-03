@@ -1,0 +1,70 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Thu Feb 22 21:12:49 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/sim_build/dump.vcd"
+[dumpfile_mtime] "Thu Feb 22 21:10:28 2024"
+[dumpfile_size] 6400195
+[savefile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/uart_rx.sav"
+[timestart] 0
+[size] 1920 1001
+[pos] 0 8
+*-17.400000 72600 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 311
+[sst_expanded] 1
+[sst_vpaned_height] 234
+@200
+-PARAMETERS
+@28
+[color] 7
+uart_rx.parity_en
+[color] 7
+uart_rx.parity_en_registered
+[color] 7
+uart_rx.parity_type_odd
+[color] 7
+uart_rx.parity_type_odd_registered
+@22
+[color] 7
+uart_rx.baud_divider[11:0]
+[color] 7
+uart_rx.baud_divider_registered[11:0]
+uart_rx.baud_divider_reference[11:0]
+@200
+-
+-I/O
+@28
+[color] 6
+uart_rx.rx
+[color] 6
+uart_rx.rx_registered
+uart_rx.rst
+@22
+uart_rx.data[7:0]
+uart_rx.data_buffer[7:0]
+@28
+[color] 2
+uart_rx.clk
+@200
+-
+-INTERNAL
+@22
+uart_rx.baud_counter[11:0]
+uart_rx.bit_position[3:0]
+@28
+[color] 3
+uart_rx.state[2:0]
+[color] 3
+uart_rx.next_state[2:0]
+uart_rx.valid_data
+uart_rx.busy
+uart_rx.error_detected
+@200
+-
+-STASH
+@28
+uart_rx.parity_bit
+uart_rx.parity_bit_even
+[pattern_trace] 1
+[pattern_trace] 0

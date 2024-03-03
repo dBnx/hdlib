@@ -1,0 +1,72 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Sun Feb 25 00:05:56 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/build/uart_buffered_tx/dump.vcd"
+[dumpfile_mtime] "Sun Feb 25 00:03:41 2024"
+[dumpfile_size] 37021407
+[savefile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/uart_buffered_tx.sav"
+[timestart] 0
+[size] 1920 1001
+[pos] 51 45
+*-14.963916 65300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] uart_buffered_tx.
+[sst_width] 273
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 207
+@200
+-PARAMETERS
+@28
+parity_en
+parity_type_odd
+@22
+baud_divider[11:0]
+@200
+-I/O
+@28
+[color] 1
+rst
+[color] 1
+clk
+@29
+[color] 3
+we
+@22
+[color] 3
+data[7:0]
+@28
+[color] 2
+tx
+[color] 3
+buffer_empty
+[color] 3
+buffer_full
+@200
+-INTERNAL
+@22
+[color] 1
+uart_buffered_tx.buffer_2_uart[7:0]
+@28
+uart_buffered_tx.buffer_re
+uart_buffered_tx.buffer_we
+[color] 1
+uart_buffered_tx.uart_busy
+uart_buffered_tx.buffer_empty
+uart_buffered_tx.buffer_full
+@200
+-UART TX - INTERNAL
+@28
+uart_buffered_tx.uart_tx_mod.start
+uart_buffered_tx.uart_tx_mod.start_registered
+@22
+uart_buffered_tx.uart_tx_mod.data_registered[7:0]
+@28
+[color] 6
+uart_buffered_tx.uart_tx_mod.state[2:0]
+[color] 7
+uart_buffered_tx.uart_tx_mod.next_state[2:0]
+@22
+uart_buffered_tx.uart_tx_mod.bit_position[3:0]
+[pattern_trace] 1
+[pattern_trace] 0

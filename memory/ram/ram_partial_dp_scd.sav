@@ -1,0 +1,48 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Sat Feb 24 19:29:52 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/sim_build/dump.vcd"
+[dumpfile_mtime] "Sat Feb 24 19:29:40 2024"
+[dumpfile_size] 1324
+[savefile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/ram_partial_dp_scd.sav"
+[timestart] 0
+[size] 1920 1001
+[pos] 25 22
+*-13.500000 19860 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 221
+[sst_expanded] 1
+[sst_vpaned_height] 263
+@200
+-PARAMETERS
+@22
+ram_partial_dp_scd.DEPTH[31:0]
+ram_partial_dp_scd.DATA_WIDTH[31:0]
+ram_partial_dp_scd.AdrBits[31:0]
+@200
+-I/O
+@28
+[color] 1
+ram_partial_dp_scd.clk
+[color] 2
+ram_partial_dp_scd.re
+@22
+[color] 2
+ram_partial_dp_scd.r_addr[5:0]
+[color] 2
+ram_partial_dp_scd.r_data[7:0]
+@28
+[color] 3
+ram_partial_dp_scd.we
+@22
+[color] 3
+ram_partial_dp_scd.w_addr[5:0]
+[color] 3
+ram_partial_dp_scd.w_data[7:0]
+@200
+-INTERNAL
+@28
+ram_partial_dp_scd.short_circuit
+[pattern_trace] 1
+[pattern_trace] 0

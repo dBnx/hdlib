@@ -1,0 +1,64 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Sat Feb 24 13:30:41 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/sim_build/dump.vcd"
+[dumpfile_mtime] "Sat Feb 24 13:25:49 2024"
+[dumpfile_size] 1737
+[savefile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/fifo_simple.sav"
+[timestart] 0
+[size] 1920 1001
+[pos] 0 17
+*-13.500000 29360 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] fifo_simple.
+[sst_width] 273
+[signals_width] 274
+[sst_expanded] 1
+[sst_vpaned_height] 279
+@200
+-PARAMETERS
+@22
+[color] 7
+fifo_simple.DEPTH[31:0]
+[color] 7
+fifo_simple.ram.AdrBits[31:0]
+[color] 7
+fifo_simple.ram.DATA_WIDTH[31:0]
+@200
+-I/O
+@28
+[color] 2
+fifo_simple.rst
+[color] 2
+fifo_simple.ram.clk
+[color] 3
+fifo_simple.full
+[color] 3
+fifo_simple.empty
+[color] 1
+fifo_simple.we
+@22
+[color] 1
+fifo_simple.din[7:0]
+@28
+[color] 1
+fifo_simple.ram.re
+@22
+[color] 1
+fifo_simple.dout[7:0]
+@200
+-INTERNAL
+@22
+fifo_simple.rd_addr[5:0]
+fifo_simple.wr_addr[5:0]
+fifo_simple.words_in_ram[6:0]
+fifo_simple.next_words_in_ram[6:0]
+@200
+-INTERNAL - RAM
+@22
+fifo_simple.ram.w_addr[5:0]
+fifo_simple.ram.w_data[7:0]
+fifo_simple.ram.r_addr[5:0]
+fifo_simple.ram.r_data[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

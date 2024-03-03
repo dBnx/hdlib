@@ -1,0 +1,56 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Fri Feb 23 20:42:32 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/HDL/Wishbone3B/sim_build/dump.vcd"
+[dumpfile_mtime] "Fri Feb 23 20:38:06 2024"
+[dumpfile_size] 587777
+[savefile] "/home/dave/Sync/Projects/HDL/Wishbone3B/src/generic/uart_tx.sav"
+[timestart] 0
+[size] 1920 1001
+[pos] 26 55
+*-15.600000 81700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 297
+[sst_expanded] 1
+[sst_vpaned_height] 264
+@200
+-PARAMETERS
+@28
+[color] 5
+uart_tx.parity_en
+[color] 5
+uart_tx.parity_type_odd
+[color] 5
+uart_tx.parity_en_registered
+[color] 5
+uart_tx.parity_type_odd_registered
+@22
+[color] 5
+uart_tx.baud_divider[11:0]
+[color] 5
+uart_tx.baud_divider_registered[11:0]
+@200
+-I/O
+@28
+uart_tx.rst
+uart_tx.clk
+@22
+uart_tx.data[7:0]
+uart_tx.data_registered[7:0]
+@28
+uart_tx.start
+uart_tx.busy
+@29
+uart_tx.tx
+@200
+-INTERNAL
+@22
+[color] 2
+uart_tx.bit_position[3:0]
+uart_tx.baud_counter[11:0]
+@28
+uart_tx.next_state[2:0]
+uart_tx.state[2:0]
+[pattern_trace] 1
+[pattern_trace] 0
