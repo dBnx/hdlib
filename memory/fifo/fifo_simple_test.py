@@ -97,7 +97,7 @@ async def single_read_writes(dut):
     assert 0 == dut.full.value, ""
 
     # Fill FIFO up
-    for i in range(dut.DEPTH.value):
+    for i in range(dut.DEPTH.value - 1):
         assert 0 == dut.full.value, ""
         await write_value(dut, i)
         assert 0 == dut.empty.value, ""
@@ -157,6 +157,45 @@ async def simultanious_write_read_not_empty(dut):
     assert value_b == read_b, ""
     assert 1 == dut.empty.value, ""
     assert 0 == dut.full.value, ""
+
+
+@cocotb.test()
+async def overflow(dut):
+    clk_freq = 50e6
+    clk_cycle = int(1e9 / clk_freq)
+
+    cocotb.start_soon(Clock(dut.clk, clk_cycle, units="ns").start())
+
+    depth = dut.DEPTH.value
+    for i in range(depth):
+        await write_value(dut, i)
+        assert 0 == dut.empty.value, "Not empty after write w/o read"
+
+    value = dut.dout.value
+    for i in range(10):
+        assert 1 == dut.full.value, "After full stays full"
+        assert 0 == dut.empty.value, "When full it's not empty"
+        assert depth-1 == dut.entries.value, "Number of entries is stable"
+        assert value == dut.dout.value, "Output value is stable"
+        await write_value(dut, i % 3)
+
+
+@cocotb.test()
+async def underflow(dut):
+    clk_freq = 50e6
+    clk_cycle = int(1e9 / clk_freq)
+
+    cocotb.start_soon(Clock(dut.clk, clk_cycle, units="ns").start())
+
+    for _ in range(dut.DEPTH.value):
+        await read_value(dut)
+        assert 0 == dut.full.value, "Not full after read w/o write"
+
+    for _ in range(10):
+        assert 1 == dut.empty.value, "After empty stays empty"
+        assert 0 == dut.full.value, "When empty it's not full"
+        assert 0 == dut.entries.value, "Number of entries is stable"
+        await read_value(dut)
 
 
 def test_runner():

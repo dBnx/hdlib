@@ -21,6 +21,7 @@ module fifo_simple #(
     input  logic                  re,
     output logic [DATA_WIDTH-1:0] dout,
     // <<< Status >>>
+    output logic [     AdrBits:0] entries,
     output logic                  full,
     output logic                  empty
 );
@@ -36,20 +37,21 @@ module fifo_simple #(
   // ╭───────────────────────────────────────────────────────────────────────╮
   // │                                Signals                                │
   // ╰───────────────────────────────────────────────────────────────────────╯
-  logic [    AdrBits:0] size;
-  logic [    AdrBits:0] size_next;
-  logic [(AdrBits-1):0] rd_addr;
-  logic [(AdrBits-1):0] wr_addr;
+  logic [  AdrBits:0] size, size_next;
+  logic [AdrBits-1:0] rd_addr;
+  logic [AdrBits-1:0] wr_addr;
 
-  logic                 re_granted;
+  logic               re_granted, we_granted;
 
   // ╭───────────────────────────────────────────────────────────────────────╮
   // │                              Assignments                              │
   // ╰───────────────────────────────────────────────────────────────────────╯
   assign empty = (size == 0);
-  assign full = (size == DEPTH[AdrBits:0]);
+  assign full = (size == DEPTH[AdrBits:0] - 1);
   // Allowsp pop if true - Either contains some or passthrough mode
   assign re_granted = re && (!empty || we);
+  assign we_granted = we && !full;
+  assign entries = size;
 
   // ╭───────────────────────────────────────────────────────────────────────╮
   // │                                 Logic                                 │
@@ -59,10 +61,18 @@ module fifo_simple #(
       we, re
     })
       'b01: begin
-        size_next = size - 1;
+        if(size == 0) begin
+          size_next = 0;
+        end else begin
+          size_next = size - 1;
+        end
       end
       'b10: begin
-        size_next = size + 1;
+        if(size == DEPTH[AdrBits:0]-1) begin
+          size_next = DEPTH[AdrBits:0]-1;
+        end else begin
+          size_next = size + 1;
+        end
       end
       default: begin
         size_next = size;
@@ -84,7 +94,7 @@ module fifo_simple #(
 
       // TODO: Test this functionality
       // if (we && (!full || re)) begin
-      if (we && !full) begin
+      if (we_granted) begin
         wr_addr <= wr_addr + 1;
       end
     end
@@ -99,7 +109,7 @@ module fifo_simple #(
   ) ram (
       .clk(clk),
       // Write Port
-      .we(we && !full),
+      .we(we_granted),
       .w_addr(wr_addr),
       .w_data(din),
       // Read Port
