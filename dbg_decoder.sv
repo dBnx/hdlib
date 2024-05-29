@@ -2,59 +2,6 @@
 
 `include "dbg_commands.sv"
 
-module dbg_decoder #(
-    parameter int DatW = 4,
-    parameter int AdrW = 4,
-    parameter int BAUD_WIDTH = 12,
-    parameter int TimeoutInCycles = 8
-  ) (
-    // System
-    input logic                   clk,
-    input logic                   rst,
-    // Data
-    output logic                  cmd_data_valid,
-    output logic  [DataWidth-1:0] cmd_data,
-    output logic                  cmd_busy,
-    output logic                  cmd_error_detected,
-    // Byte Receiver Interface
-    input logic recv_data_valid,
-    input logic recv_data,
-    input logic recv_busy,
-    input logic recv_error_detected
-    // // Uart
-    // input logic                   rx,
-    // // Configuration
-    // input logic  [BAUD_WIDTH-1:0] baud_divider,
-    // input logic                   parity_en,
-    // input logic                   parity_type_odd
-);
-
-  localparam int CmdW = 1;
-  localparam int MaxBytes = CmdW + AdrW + DatW;
-  localparam int TOWidth = $clog2(TimeoutInCycles);
-  localparam int ByteCtrWidth = $clog2(MaxBytes);
-
-  typedef enum {
-    IDLE,
-    AWAIT_BYTE,
-    FINISHED,
-    ERROR
-  } state_t;
-
-  assign cmd_data_valid = state === FINISHED;
-  assign cmd_error_detected = state === ERROR;
-
-  state_t state, state_next;
-
-  // Cmd
-  logic [ByteCtrWidth:0] cmd_required_bytes;
-  logic                  cmd_complete;
-
-  // Inputs
-  logic recv_data_valid;
-  logic recv_data;
-  logic recv_busy;
-  logic recv_error_detected;
   // uart_rx rx (
   //     // Syscon
   //     .clk (clk),
@@ -73,13 +20,58 @@ module dbg_decoder #(
   // );
 
 
+
+module dbg_decoder #(
+    parameter int DatW = 4, // in Bytes
+    parameter int AdrW = 4, // in Bytes
+    parameter int BAUD_WIDTH = 12, // Bits of BAUD divider
+    parameter int TimeoutInCycles = 20 * (50000000 / 115200) // Assume serial baud 115200, 10b tolerance and 50MHz clk
+  ) (
+    // System
+    input logic                   clk,
+    input logic                   rst,
+    // Data
+    output logic  [DataWidth-1:0] cmd,
+    output logic                  cmd_valid,
+    output logic                  error_detected,
+    output logic                  idle,
+    // Byte Receiver Interface
+    input logic recv_data_valid,
+    input logic recv_data,
+    input logic recv_busy,
+    input logic recv_error_detected
+);
+
+  // Amound of bytes to make up a command
+  localparam int CmdW = 1;
+  localparam int MaxBytes = CmdW + AdrW + DatW;
+  localparam int TOWidth = $clog2(TimeoutInCycles);
+  localparam int ByteCtrWidth = $clog2(MaxBytes);
+
+  typedef enum {
+    IDLE,
+    AWAIT_CMD_BYTE,
+    AWAIT_BYTES,
+    FINISHED,
+    ERROR
+  } state_t;
+
+  state_t state, state_next;
+
+  // After first byte the command is known and so are the remaining bytes
+  logic [ByteCtrWidth:0] remaining_bytes_ctr;
+
   // logic [ByteCtrWidth:0] ctr_current_byte;
   // logic                  ctr_current_byte_fire;
   logic [TOWidth:0] ctr_timeout;
   logic             ctr_timeout_fire;
+  
+  assign cmd_valid = state === FINISHED;
+  assign error_detected = state === ERROR;
+  assign idle = state === IDLE;
 
-  assign ctr_timeout_fire = ctr_timeout == TimeoutInCycles;
-  assign ctr_current_byte_fire = ctr_current_byte == NBytes;
+  assign ctr_timeout_fire = int'(ctr_timeout) == TimeoutInCycles - 1;
+  assign ctr_bytes_collected = int'(remaining_bytes_ctr) == 0;
 
   always_ff @(posedge clk or posedge reset) begin
     if(reset) begin
@@ -116,16 +108,19 @@ module dbg_decoder #(
     end
   end
 
+  // Byte retrieval and timeout logic
   always_ff @(posedge clk or posedge reset) begin
     if(reset) begin
       ctr_timeout <= 0;
       ctr_timeout_fire <= 0;
       ctr_current_byte <= 0;
-    end else if (state != AWAIT_BYTE) begin
-      ctr_timeout <= 0;
-      ctr_timeout_fire <= 0;
-      ctr_current_byte <= 0;
-    end else begin
+    // end else if (state != AWAIT_BYTES && state != AWAIT_CMD_BYTE) begin
+    //   ctr_timeout <= 0;
+    //   ctr_timeout_fire <= 0;
+    //   ctr_current_byte <= 0;
+    end else if (state == AWAIT_CMD_BYTE) begin
+      //
+    end else if (state == AWAIT_BYTES) begin
       if(recv_data_valid) begin
         ctr_current_byte <= ctr_current_byte +1;
       end
@@ -136,6 +131,10 @@ module dbg_decoder #(
         ctr_timeout <= 0;
         ctr_timeout_fire <= 1;
       end
+    end else begin
+      ctr_timeout <= 0;
+      ctr_timeout_fire <= 0;
+      ctr_current_byte <= 0;
     end
   end
 
