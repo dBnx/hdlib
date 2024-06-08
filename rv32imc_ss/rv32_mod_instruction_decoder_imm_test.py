@@ -4,12 +4,35 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 
+# Instruction Type: {is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j}
+ASM = {
+    "ADDI x0, x0, 0": (0x00000013, 0b10000, 0), # I Type
+    "JAL x0, -2": (0xfffff06f, 0b00011, 0xFFFF_FFFE), # 
+    "JAL x0, -4": (0xffdff06f, 0b00011, 0xFFFF_FFFC), # 
+    "JAL x0,  2": (0x0020006f, 0b00011, 0x0000_0002), # 
+    "JAL x0,  4": (0x0020006f, 0b00011, 0x0000_0004), # 
+}
 
 @cocotb.test()
-async def test_foo(dut) -> None:
-    clk_time_ns = int(1e9 / dut.CLK_FREQ_HZ.value)
-    cocotb.start_soon(Clock(dut.clk, clk_time_ns, units="ns").start())
+async def test_null(dut) -> None:
+    dut.instruction.value = 0
+    dut.instruction_format.value = 0
     await Timer(1, "ps")
+    assert dut.immediate.value == 0, "No input should stay 0 to reduce transitions"
+
+@cocotb.test()
+async def test_examples(dut) -> None:
+    for instr_asm, (instr_bin, instr_type, ref_imm) in ASM.items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = instr_type
+        await Timer(1, "ps")
+        assert dut.immediate.value == ref_imm, f"{instr_asm}"
+
+    # module rv32_mod_instruction_decoder_imm (
+    #     input [31:0] instruction,
+    #     input [ 5:0] instruction_format,
+    #     output [31:0] immediate
+    # );
 
     # await reset_dut(dut)
 

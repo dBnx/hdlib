@@ -24,7 +24,7 @@ module rv32_mod_instruction_decoder (
 );
     bit [6:0] opcode;
     assign opcode = instruction[6:0];
-    assign is_compressed = opcode[1:0] != 3'b11;
+    assign is_compressed = opcode[1:0] != 2'b11;
     
     // Registers
     bit is_r_type;
@@ -80,51 +80,42 @@ module rv32_mod_instruction_decoder (
 
         if( !is_compressed ) begin
             case(opcode) 
-                OP_OP_IMM  : // I
+                `OP_OP_IMM  : // I
                     is_i_type = 1;
-                    break;
-                OP_OP_IMM_32: // I
+                `OP_OP_IMM_32: // I
                     is_i_type = 1;
-                    break;
-                OP_LUI     : // U
+                `OP_LUI     : // U
                     is_u_type = 1;
-                    break;
-                OP_AUIPC   : // U
+                `OP_AUIPC   : // U
                     is_u_type = 1;
-                    break;
-                OP_OP      : // R
+                `OP_OP      : // R
                     is_r_type = 1;
-                    break;
-                OP_JAL     : // J
-                    is_j_type = 1;
-                    break;
-                OP_JALR    : // I
+                `OP_JAL     : begin // J
+                    is_u_type = 1;
+                    is_u_subtype_j = 1;
+                end
+                `OP_JALR    : // I
                     is_i_type = 1;
-                    break;
-                OP_BRANCH  : // B
+                `OP_BRANCH  : begin // B
                     is_s_type = 1;
                     is_s_subtype_b = 1;
-                    break;
-                OP_LOAD    : // I
+                end
+                `OP_LOAD    : // I
                     is_i_type = 1;
-                    break;
-                OP_STORE   : // S
+                `OP_STORE   : // S
                     is_s_type = 1;
-                    break;
-                OP_MISC_MEM: // I
+                `OP_MISC_MEM: // I
                     is_i_type = 1;
-                    break;
-                OP_SYSTEM  : // I
+                `OP_SYSTEM  : // I
                     is_i_type = 1;
-                    break;
-                default:
+                default: begin
                     is_r_type = 0;
                     is_i_type = 0;
                     is_s_type = 0;
                     is_u_type = 0;
                     is_u_subtype_j = 0;
                     is_s_subtype_b = 0;
-                    break;
+                end
             endcase
         end
     end

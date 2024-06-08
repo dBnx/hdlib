@@ -12,7 +12,7 @@ module rv32_mod_branch #(
   assign branch_taken = is_jmp || (is_cond && cond_statisfied);
 
   always_comb begin
-    casex (cond[1:0])
+    case (cond[1:0])
       // TODO: Encoding
       2'b01:  cond_statisfied = cond[2] ^ (rf_read0 > rf_read1);
       2'b10:  cond_statisfied = cond[2] ^ (rf_read0 == rf_read1);

@@ -28,7 +28,7 @@ module rv32_mod_load_store_unit #(
     assign req_size = req_type[1:0];
 
     assign data_data_o = data_i;
-    assign data_o = data_data_i;
+    // assign data_o = data_data_i;
     assign data_req = req_type != 0;
     assign data_wr = wr;
     assign data_addr = {address[31:2], 2'h0};
@@ -39,7 +39,7 @@ module rv32_mod_load_store_unit #(
     logic sign_16;
     logic sign_8;
     logic sign_bit;
-    assign asign_16 = address[1] ? data_data_i[31] : data_data_i[15];
+    assign sign_16 = address[1] ? data_data_i[31] : data_data_i[15];
     assign sign = {24{sign_bit}};
 
     // FIXME: Add handling of aligned store / loads
@@ -60,7 +60,7 @@ module rv32_mod_load_store_unit #(
         endcase
 
         case({req_signed, req_size})
-        3'b101: sign_bit = address[1:0] == 0 ? data_data_i[7] : address[1:0] == 1 ? ;
+        3'b101: sign_bit = sign_8;
         3'b110: sign_bit = sign_16;
         default: sign_bit = 0;
         endcase

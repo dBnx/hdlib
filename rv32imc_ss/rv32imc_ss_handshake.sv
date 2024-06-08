@@ -5,12 +5,11 @@
 // `include "rv32imc_ss/rv32_mod_registerfile.sv"
 // `include "rv32imc_ss/rv32_mod_alu.sv"
 
-typedef bit [1:0] wb_source_t;
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC 1
+`define WB_SOURCE_PC  1
 `define WB_SOURCE_LSU 2
 
-typedef bit [2:0] br_condition_t;
+
 `define BR_COND_NOP 0
 `define BR_COND_EQ 1
 `define BR_COND_NE 2
@@ -33,7 +32,7 @@ module rv32imc_ss_handshake #(
     input  [31:0] instr_data_i,
 
     output        data_req,
-    input         data_wr,
+    output        data_wr,
     input         data_ack,
     input         data_err,
     output [ 3:0] data_be,
@@ -46,7 +45,7 @@ module rv32imc_ss_handshake #(
   logic [31:0] if_address;
   logic [31:0] if_instruction;
   logic        if_valid;
-  assign if_instruction = pc_next;
+  // assign if_address? = pc_next;
 
   // Program Counter ( global pointer )
   logic        pc_stall;
@@ -64,9 +63,9 @@ module rv32imc_ss_handshake #(
   always_comb begin
     case (wb_source)
       // TODO: Move encoding inside instr decode (?)
-      WB_SOURCE_ALU: rf_write0_data = alu_result;
-      WB_SOURCE_PC:  rf_write0_data = pc_next;
-      WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
+      `WB_SOURCE_ALU: rf_write0_data = alu_result;
+      `WB_SOURCE_PC:  rf_write0_data = pc_next;
+      `WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
       default: rf_write0_data = 0;
     endcase
 
@@ -142,13 +141,15 @@ module rv32imc_ss_handshake #(
       .rf_read0_index(rf_read0_index),
       .rf_read1_index(rf_read1_index),
       .rf_write0_index(rf_write0_index),
-      .instruction_format(instruction_format),
+      .instruction_format(id_instruction_format),
       .func(func),
       .is_compressed(is_compressed)
   );
 
   rv32_mod_instruction_decoder_func inst_instr_dec_func (
-      .func(func),
+      .instruction_format(id_instruction_format),
+      .funct3(func[2:0]),
+      .b30(if_instruction[30]),
 
       .rf_write0_enable(rf_write0_enable),
       .alu_op0_use_pc(alu_op0_use_pc),
@@ -163,7 +164,7 @@ module rv32imc_ss_handshake #(
   );
 
   rv32_mod_instruction_decoder_imm inst_instr_dec_imm (
-      .instruction(instruction),
+      .instruction(if_instruction),
       .instruction_format(id_instruction_format),
       .immediate(immediate)
   );

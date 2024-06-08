@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 @cocotb.test()
 async def test_foo(dut) -> None:
-    clk_time_ns = int(1e9 / dut.CLK_FREQ_HZ.value)
+    clk_time_ns = int(10)
     cocotb.start_soon(Clock(dut.clk, clk_time_ns, units="ns").start())
     await Timer(1, "ps")
 

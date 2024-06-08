@@ -7,8 +7,7 @@ from dataclasses import dataclass
 
 @cocotb.test()
 async def test_foo(dut) -> None:
-    clk_time_ns = int(1e9 / dut.CLK_FREQ_HZ.value)
-    cocotb.start_soon(Clock(dut.clk, clk_time_ns, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
     # await reset_dut(dut)
@@ -24,11 +23,21 @@ def test_runner():
     from pathlib import Path
     from cocotb.runner import get_runner
 
-    hdl_toplevel = "rv32_mod_instruction_decoder"
+    hdl_toplevel = "rv32imc_ss_handshake"
     sim = os.getenv("SIM", "verilator")
     project_path = Path(__file__).resolve().parent
 
     verilog_sources = [
+        project_path / "rv32_mod_alu.sv",
+        project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_instruction_decoder.sv",
+        project_path / "rv32_mod_instruction_decoder_func.sv",
+        project_path / "rv32_mod_instruction_decoder_imm.sv",
+        project_path / "rv32_mod_instruction_fetch.sv",
+        project_path / "rv32_mod_load_store_unit.sv",
+        project_path / "rv32_mod_pc.sv",
+        project_path / "rv32_mod_registerfile.sv",
+        project_path / "rv32_mod_types.sv",
         project_path / f"{hdl_toplevel}.sv",
     ]
 

@@ -15,107 +15,107 @@ typedef enum bit [1:0] {
 } wb_source_t;
 */
 
-`define ALU_OP_ADD  4'b0_000
+`define ALU_OP_ADD 4'b0_000
 
 typedef bit [1:0] wb_source_t;
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC  1
+`define WB_SOURCE_PC 1
 `define WB_SOURCE_LSU 2
 
 typedef bit [2:0] br_condition_t;
 `define BR_COND_NOP 0
-`define BR_COND_EQ  1
-`define BR_COND_NE  2
-`define BR_COND_GT  3
-`define BR_COND_GE  4
-`define BR_COND_LT  5
-`define BR_COND_LE  6
+`define BR_COND_EQ 1
+`define BR_COND_NE 2
+`define BR_COND_GT 3
+`define BR_COND_GE 4
+`define BR_COND_LT 5
+`define BR_COND_LE 6
 
 module rv32_mod_instruction_decoder_func (
-    input [5:0] instruction_format, // or opcode?
+    input [5:0] instruction_format,  // or opcode?
     input [2:0] funct3,
     input [0:0] b30,
 
-    output                   rf_write0_enable,
-    output                   alu_op0_use_pc,
-    output                   alu_op1_use_imm,
-    output             [4:0] alu_func,
-    output             [3:0] ram_req,
-    output                   ram_wr,
+    output logic             rf_write0_enable,
+    output logic             alu_op0_use_pc,
+    output logic             alu_op1_use_imm,
+    output logic       [4:0] alu_func,
+    output logic       [3:0] ram_req,
+    output logic             ram_wr,
     output wb_source_t       wb_source,
 
-    output br_condition_t    br_cond,
-    output                   br_is_cond,
-    output                   br_jmp
+    output br_condition_t br_cond,
+    output logic          br_is_cond,
+    output logic          br_jmp
 );
-    // {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
+  // {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
 
-    // Subtypes change immediate value encoding
-    biaeawt is_u_subtype_j;
-    bit is_s_subtype_b;
+  // Subtypes change immediate value encoding
+  // bit is_u_subtype_j;
+  // bit is_s_subtype_b;
 
-    // Function
-    // bit [2:0] funct3;
-    // bit [6:0] funct7;
-    // assign funct3 = instruction[14:12];
-    // assign funct7 = instruction[31:25];
-    
+  // Function
+  // bit [2:0] funct3;
+  // bit [6:0] funct7;
+  // assign funct3 = instruction[14:12];
+  // assign funct7 = instruction[31:25];
 
-    always_comb begin
-      rf_write0_enable = 0;
-      alu_op0_use_pc = 0;
-      alu_op1_use_imm = 0;
-      alu_func = ALU_OP_PASS;
-      ram_req = 0;
-      ram_wr = 0;
-      wb_source = WB_SOURCE_ALU;
 
-      br_cond = 0;
-      br_is_cond = 0;
-      br_jmp = 0;
+  always_comb begin
+    rf_write0_enable = 0;
+    alu_op0_use_pc = 0;
+    alu_op1_use_imm = 0;
+    alu_func = {1'b0, `ALU_OP_ADD};
+    ram_req = 0;
+    ram_wr = 0;
+    wb_source = `WB_SOURCE_ALU;
 
-      casex (instruction_format)
-        6'b1XXXXX: begin // R Type
-          rf_write0_enable = 1;
-          alu_func = funct3;
+    br_cond = 0;
+    br_is_cond = 0;
+    br_jmp = 0;
+
+    case (instruction_format)
+      6'b100000: begin  // R Type
+        rf_write0_enable = 1;
+        alu_func[2:0] = funct3;
+      end
+      6'b010000: begin  // I Type - Op or Loads! // TODO: Impl load
+        rf_write0_enable = 1;
+        alu_op1_use_imm  = 1;
+        if (1 == 1) begin  // opcode != `OP_LOAD ) begin
+          alu_func[2:0] = funct3;
+        end else begin
+          wb_source = `WB_SOURCE_LSU;
+          alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+          ram_req[2:0]   = funct3;  // Width and signdness
         end
-        6'bX1XXXX: begin // I Type - Op or Loads! // TODO: Impl load
-          rf_write0_enable = 1;
-          alu_op1_use_imm = 1;
-          if( opcode != OP_LOAD ) begin
-            alu_func = funct3;
-          end else begin
-            wb_source = WB_SOURCE_LSU;
-            alu_func = ALU_OP_ADD; // TODO: Handle addressing somehow
-            ram_req = funct3; // Width and signdness
-          end
-        end
-        6'bXX10XX: begin // S Type - Store
-          alu_op1_use_imm = 1;
-          ram_req = funct3; // Width and signdness
-          alu_func = ALU_OP_ADD; // TODO: Handle addressing somehow
-          ram_wr = 1;
-        end
-        6'bXX11XX: begin // B Type - Conditional
-          br_cond = funct3; // FIXME: Check!
-          br_is_cond = 1;
-          alu_op0_use_pc = 1; // check!
-        end
-        6'bXXXX10: begin // U Type - LUI AUIPC
-          rf_write0_enable = 1;
-          alu_op1_use_imm = 1;
-          alu_func = ALU_OP_ADD;
-        end
-        6'bXXXX11: begin // J Type - Unconditional
-          alu_op0_use_pc = 1;
-          alu_func = ALU_OP_ADD; // TODO: Handle addressing somehow
-          br_jmp = 1;
-        end
-        default: begin
-        end
-      endcase
-    end
-    /*
+      end
+      6'b001000: begin  // S Type - Store
+        alu_op1_use_imm = 1;
+        ram_req[2:0] = funct3;  // Width and signdness
+        alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+        ram_wr = 1;
+      end
+      6'b001100: begin  // B Type - Conditional
+        br_cond = funct3;  // FIXME: Check!
+        br_is_cond = 1;
+        alu_op0_use_pc = 1;  // check!
+      end
+      6'b000010: begin  // U Type - LUI AUIPC
+        rf_write0_enable = 1;
+        alu_op1_use_imm = 1;
+        alu_func[3:0] = `ALU_OP_ADD;
+      end
+      6'b000011: begin  // J Type - Unconditional
+        alu_op0_use_pc = 1;
+        alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+        br_jmp = 1;
+      end
+      default: begin
+      end
+    endcase
+  end
+  /*
     always_comb begin
         case(opcode) 
             OP_OP_IMM  : // I
@@ -167,7 +167,7 @@ module rv32_mod_instruction_decoder_func (
     end
 */
 
-    /*
+  /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;
     localparam bit[2:0] ALU_I_SLTI  = 3'b010;
