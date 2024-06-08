@@ -1,3 +1,16 @@
+`define OP_OP_IMM    7'b00100 // I
+`define OP_OP_IMM_32 7'b00110 // I
+`define OP_LUI       7'b01101 // U
+`define OP_AUIPC     7'b00101 // U
+`define OP_OP        7'b01100 // R
+`define OP_JAL       7'b11011 // J
+`define OP_JALR      7'b11001 // I
+`define OP_BRANCH    7'b11000 // B
+`define OP_LOAD      7'b00000 // I
+`define OP_STORE     7'b01000 // S
+`define OP_MISC_MEM  7'b00011 // I
+`define OP_SYSTEM    7'b11100 // I
+
 module rv32_mod_instruction_decoder (
     input  [31:0] instruction,
 
@@ -5,7 +18,7 @@ module rv32_mod_instruction_decoder (
     output [ 4:0] rf_read1_index,
     output [ 4:0] rf_write0_index,
 
-    output [31:0] immediate,
+    output [ 5:0] instruction_format,
     output [ 5:0] func,
     output        is_compressed
 );
@@ -25,6 +38,11 @@ module rv32_mod_instruction_decoder (
     assign rf_read0_index = is_u_type ? 0 : rs1;
     assign rf_read1_index = is_u_type || is_i_type ? 0 : rs2;
     assign rf_write0_index = is_u_type ? 0 : rd;
+    assign instruction_format = {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
+
+    // Subtypes change immediate value encoding
+    bit is_u_subtype_j;
+    bit is_s_subtype_b;
 
     // Function
     bit [2:0] funct3;
@@ -32,24 +50,8 @@ module rv32_mod_instruction_decoder (
     assign funct3 = instruction[14:12];
     assign funct7 = instruction[31:25];
     
-    // Immediates
-    bit [10:0] imm_i;
-    bit [ 9:0] imm_s;
-    bit [19:0] imm_u;
-    assign imm_i = instruction[31:20];
-    assign imm_s = {funct7, rsd};
-    assign imm_u = instruction[31:12];
-    always_comb begin
-        // TODO: Add b-type, j-type handling
-        case({is_r_type, is_i_type, is_s_type, is_u_type}) 
-            4'b1000: immediate = imm_r;
-            4'b0100: immediate = imm_i;
-            4'b0010: immediate = imm_s;
-            4'b0001: immediate = imm_u;
-        endcase
-    end
-    
-    localparam logic[4:0] ALU_I  = 5'b001_X0;
+    /*
+    localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;
     localparam bit[2:0] ALU_I_SLTI  = 3'b010;
     localparam bit[2:0] ALU_I_SLTIU = 3'b011;
@@ -66,187 +68,66 @@ module rv32_mod_instruction_decoder (
     localparam bit[2:0] ALU_S_SRL_SRA = 3'b101;
     localparam bit[2:0] ALU_S_OR      = 3'b110;
     localparam bit[2:0] ALU_S_AND     = 3'b111;
+    */
+
     always_comb begin
         is_r_type = 0;
         is_i_type = 0;
         is_s_type = 0;
         is_u_type = 0;
+        is_u_subtype_j = 0;
+        is_s_subtype_b = 0;
+
         if( !is_compressed ) begin
             case(opcode) 
-                OP_ADD:
+                OP_OP_IMM  : // I
+                    is_i_type = 1;
+                    break;
+                OP_OP_IMM_32: // I
+                    is_i_type = 1;
+                    break;
+                OP_LUI     : // U
+                    is_u_type = 1;
+                    break;
+                OP_AUIPC   : // U
+                    is_u_type = 1;
+                    break;
+                OP_OP      : // R
                     is_r_type = 1;
                     break;
-                OP_SUB:
-                    is_r_type = 1;
+                OP_JAL     : // J
+                    is_j_type = 1;
                     break;
-                OP_SLL:
-                    is_r_type = 1;
-                    break;
-                OP_SLT:
-                    is_r_type = 1;
-                    break;
-                OP_SLTU:
-                    is_r_type = 1;
-                    break;
-                OP_XOR:
-                    is_r_type = 1;
-                    break;
-                OP_SRL:
-                    is_r_type = 1;
-                    break;
-                OP_SRA:
-                    is_r_type = 1;
-                    break;
-                OP_OR:
-                    is_r_type = 1;
-                    break;
-                OP_AND:
-                    is_r_type = 1;
-                    break;
-                OP_ADDI:
+                OP_JALR    : // I
                     is_i_type = 1;
                     break;
-                OP_SLLI:
+                OP_BRANCH  : // B
+                    is_s_type = 1;
+                    is_s_subtype_b = 1;
+                    break;
+                OP_LOAD    : // I
                     is_i_type = 1;
                     break;
-                OP_SLTI:
-                    is_i_type = 1;
-                    break;
-                OP_SLTUI:
-                    is_i_type = 1;
-                    break;
-                OP_XORI:
-                    is_i_type = 1;
-                    break;
-                OP_SRLI:
-                    is_i_type = 1;
-                    break;
-                OP_SRAI:
-                    is_i_type = 1;
-                    break;
-                OP_ORI:
-                    is_i_type = 1;
-                    break;
-                OP_ANDI:
-                    is_i_type = 1;
-                    break;
-                OP_SLLI:
-                    is_i_type = 1;
-                    break;
-                OP_JALR:
-                    is_r_type = 1;
-                    break;
-                OP_LB:
-                    is_i_type = 1;
-                    break;
-                OP_LH:
-                    is_i_type = 1;
-                    break;
-                OP_LW:
-                    is_i_type = 1;
-                    break;
-                OP_LBU:
-                    is_i_type = 1;
-                    break;
-                OP_LHU:
-                    is_i_type = 1;
-                    break;
-                OP_SB:
+                OP_STORE   : // S
                     is_s_type = 1;
                     break;
-                OP_SH:
-                    is_s_type = 1;
-                    break;
-                OP_SW:
-                    is_s_type = 1;
-                    break;
-                OP_ADDIW:
+                OP_MISC_MEM: // I
                     is_i_type = 1;
                     break;
-                OP_SLLIW:
+                OP_SYSTEM  : // I
                     is_i_type = 1;
-                    break;
-                OP_SRLIW:
-                    is_i_type = 1;
-                    break;
-                OP_SRAIW:
-                    is_i_type = 1;
-                    break;
-                OP_ADDW:
-                    is_r_type = 1;
-                    break;
-                OP_SUBW:
-                    is_r_type = 1;
-                    break;
-                OP_SLLW:
-                    is_r_type = 1;
-                    break;
-                OP_SRLW:
-                    is_r_type = 1;
-                    break;
-                OP_SRAW:
-                    is_r_type = 1;
-                    break;
-                OP_SLTW:
-                    is_r_type = 1;
-                    break;
-                OP_SLTUW:
-                    is_r_type = 1;
-                    break;
-                OP_XORW:
-                    is_r_type = 1;
-                    break;
-                OP_ORW:
-                    is_r_type = 1;
-                    break;
-                OP_ANDW:
-                    is_r_type = 1;
-                    break;
-                OP_FENCE:
-                    is_u_type = 1;
-                    break;
-                OP_FENCEI:
-                    is_u_type = 1;
-                    break;
-                OP_ECALL:
-                    is_u_type = 1;
-                    break;
-                OP_EBREAK:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRW:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRS:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRC:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRWI:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRSI:
-                    is_u_type = 1;
-                    break;
-                OP_CSRRCI:
-                    is_u_type = 1;
-                    break;
-                OP_LUI:
-                    is_u_type = 1;
                     break;
                 default:
                     is_r_type = 0;
                     is_i_type = 0;
                     is_s_type = 0;
                     is_u_type = 0;
+                    is_u_subtype_j = 0;
+                    is_s_subtype_b = 0;
                     break;
             endcase
         end
     end
-    
-    assign rs1 = instruction[];
-
 
 endmodule
 

@@ -7,7 +7,7 @@
 
 typedef bit [1:0] wb_source_t;
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC  1
+`define WB_SOURCE_PC 1
 `define WB_SOURCE_LSU 2
 
 typedef bit [2:0] br_condition_t;
@@ -36,6 +36,7 @@ module rv32imc_ss_handshake #(
     input         data_wr,
     input         data_ack,
     input         data_err,
+    output [ 3:0] data_be,
     output [31:0] data_addr,
     output [31:0] data_data_o,
     input  [31:0] data_data_i
@@ -64,7 +65,7 @@ module rv32imc_ss_handshake #(
     case (wb_source)
       // TODO: Move encoding inside instr decode (?)
       WB_SOURCE_ALU: rf_write0_data = alu_result;
-      WB_SOURCE_PC: rf_write0_data = pc_next;
+      WB_SOURCE_PC:  rf_write0_data = pc_next;
       WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
       default: rf_write0_data = 0;
     endcase
@@ -74,19 +75,21 @@ module rv32imc_ss_handshake #(
   // Instruction Decoder
   logic rf_write0_enable;
   logic [4:0] rf_read0_index, rf_read1_index, rf_write0_index;
-  logic [31:0] immediate;
-  logic [ 5:0] func;
-  logic        is_compressed;
+  logic          [31:0] immediate;
+  logic          [ 5:0] func;
+  logic                 is_compressed;
 
-  logic        alu_op0_use_pc;
-  logic        alu_op1_use_imm;
-  logic [ 4:0] alu_func;
-  logic [ 3:0] lsu_req_type;
-  logic        lsu_wr;
-  wb_source_t wb_source;
-  br_condition_t br_cond;
-  logic        br_is_cond;
-  logic        br_is_jmp;
+  logic                 alu_op0_use_pc;
+  logic                 alu_op1_use_imm;
+  logic          [ 4:0] alu_func;
+  logic          [ 3:0] lsu_req_type;
+  logic                 lsu_wr;
+  wb_source_t           wb_source;
+  br_condition_t        br_cond;
+  logic                 br_is_cond;
+  logic                 br_is_jmp;
+
+  logic          [ 5:0] id_instruction_format;
 
   // ALU
   logic [31:0] alu_read0_data, alu_read1_data;
@@ -139,7 +142,7 @@ module rv32imc_ss_handshake #(
       .rf_read0_index(rf_read0_index),
       .rf_read1_index(rf_read1_index),
       .rf_write0_index(rf_write0_index),
-      .immediate(immediate),
+      .instruction_format(instruction_format),
       .func(func),
       .is_compressed(is_compressed)
   );
@@ -151,12 +154,18 @@ module rv32imc_ss_handshake #(
       .alu_op0_use_pc(alu_op0_use_pc),
       .alu_op1_use_imm(alu_op1_use_imm),
       .alu_func(alu_func),
-      .ram_special(lsu_req_type),
+      .ram_req(lsu_req_type),
       .ram_wr(lsu_wr),
       .wb_source(wb_source),
       .br_cond(br_cond),
       .br_is_cond(br_is_cond),
       .br_jmp(br_is_jmp)
+  );
+
+  rv32_mod_instruction_decoder_imm inst_instr_dec_imm (
+      .instruction(instruction),
+      .instruction_format(id_instruction_format),
+      .immediate(immediate)
   );
 
   rv32_mod_registerfile inst_registerfile (
@@ -200,6 +209,7 @@ module rv32imc_ss_handshake #(
       .stall(lsu_stall),
 
       .data_req(data_req),
+      .data_be(data_be),
       .data_wr(data_wr),
       .data_ack(data_ack),
       .data_err(data_err),

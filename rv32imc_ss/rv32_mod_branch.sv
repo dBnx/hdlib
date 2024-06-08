@@ -14,9 +14,9 @@ module rv32_mod_branch #(
   always_comb begin
     casex (cond[1:0])
       // TODO: Encoding
-      3'bX01:  cond_statisfied = cond[2] ^ (rf_read0 > rf_read1);
-      3'bX10:  cond_statisfied = cond[2] ^ (rf_read0 == rf_read1);
-      3'bX11:  cond_statisfied = cond[2] ^ (rf_read0 < rf_read1);
+      2'b01:  cond_statisfied = cond[2] ^ (rf_read0 > rf_read1);
+      2'b10:  cond_statisfied = cond[2] ^ (rf_read0 == rf_read1);
+      2'b11:  cond_statisfied = cond[2] ^ (rf_read0 < rf_read1);
       default: cond_statisfied = 0;
     endcase
   end
