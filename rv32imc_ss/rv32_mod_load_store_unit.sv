@@ -33,7 +33,8 @@ module rv32_mod_load_store_unit #(
     assign data_wr = wr;
     assign data_addr = {address[31:2], 2'h0};
     assign valid = data_ack;
-    assign stall = !data_ack && !data_err;
+    // Stalling halts the PC, so only emit if there is an actual request
+    assign stall = (!data_ack && !data_err) && data_req;
 
     logic [31:8] sign;
     logic sign_16;

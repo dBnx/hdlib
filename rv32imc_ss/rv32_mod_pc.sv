@@ -12,7 +12,7 @@ module rv32_mod_pc #(
     input  [31:0] pc_overwrite_data,
     input         pc_overwrite_enable
 );
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             pc_current <= INITIAL_GP;
         end if(!stall) begin

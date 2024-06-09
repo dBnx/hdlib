@@ -1,15 +1,15 @@
-`define OP_OP_IMM    7'b00100 // I
-`define OP_OP_IMM_32 7'b00110 // I
-`define OP_LUI       7'b01101 // U
-`define OP_AUIPC     7'b00101 // U
-`define OP_OP        7'b01100 // R
-`define OP_JAL       7'b11011 // J
-`define OP_JALR      7'b11001 // I
-`define OP_BRANCH    7'b11000 // B
-`define OP_LOAD      7'b00000 // I
-`define OP_STORE     7'b01000 // S
-`define OP_MISC_MEM  7'b00011 // I
-`define OP_SYSTEM    7'b11100 // I
+`define OP_OP_IMM    5'b00100 // I
+`define OP_OP_IMM_32 5'b00110 // I
+`define OP_LUI       5'b01101 // U
+`define OP_AUIPC     5'b00101 // U
+`define OP_OP        5'b01100 // R
+`define OP_JAL       5'b11011 // J
+`define OP_JALR      5'b11001 // I
+`define OP_BRANCH    5'b11000 // B
+`define OP_LOAD      5'b00000 // I
+`define OP_STORE     5'b01000 // S
+`define OP_MISC_MEM  5'b00011 // I
+`define OP_SYSTEM    5'b11100 // I
 
 module rv32_mod_instruction_decoder (
     input  [31:0] instruction,
@@ -37,8 +37,9 @@ module rv32_mod_instruction_decoder (
     assign rd = instruction[11:7];
     assign rf_read0_index = is_u_type ? 0 : rs1;
     assign rf_read1_index = is_u_type || is_i_type ? 0 : rs2;
-    assign rf_write0_index = is_u_type ? 0 : rd;
-    assign instruction_format = {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
+    assign rf_write0_index = is_s_type ? 0 : rd;
+    assign instruction_format = {is_r_type, is_i_type, is_s_type, is_s_subtype_b,
+                                 is_u_type, is_u_subtype_j};
 
     // Subtypes change immediate value encoding
     bit is_u_subtype_j;
@@ -79,7 +80,7 @@ module rv32_mod_instruction_decoder (
         is_s_subtype_b = 0;
 
         if( !is_compressed ) begin
-            case(opcode) 
+            case(opcode[6:2]) 
                 `OP_OP_IMM  : // I
                     is_i_type = 1;
                 `OP_OP_IMM_32: // I
@@ -112,9 +113,9 @@ module rv32_mod_instruction_decoder (
                     is_r_type = 0;
                     is_i_type = 0;
                     is_s_type = 0;
+                    is_s_subtype_b = 0;
                     is_u_type = 0;
                     is_u_subtype_j = 0;
-                    is_s_subtype_b = 0;
                 end
             endcase
         end

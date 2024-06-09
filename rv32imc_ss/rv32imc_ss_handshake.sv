@@ -45,7 +45,7 @@ module rv32imc_ss_handshake #(
   logic [31:0] if_address;
   logic [31:0] if_instruction;
   logic        if_valid;
-  // assign if_address? = pc_next;
+  assign if_address = pc_current;
 
   // Program Counter ( global pointer )
   logic        pc_stall;

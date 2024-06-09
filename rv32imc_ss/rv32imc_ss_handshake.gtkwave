@@ -1,0 +1,128 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Sun Jun  9 12:51:50 2024
+[*]
+[dumpfile] "/home/dave/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
+[dumpfile_mtime] "Sun Jun  9 12:49:57 2024"
+[dumpfile_size] 26530
+[savefile] "/home/dave/hdlib/rv32imc_ss/rv32imc_ss_handshake.gtkwave"
+[timestart] 0
+[size] 1920 1001
+[pos] 77 68
+*-16.000000 320000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] rv32imc_ss_handshake.
+[sst_width] 273
+[signals_width] 319
+[sst_expanded] 1
+[sst_vpaned_height] 248
+@22
+rv32imc_ss_handshake.INITIAL_GP[31:0]
+rv32imc_ss_handshake.INITIAL_SP[31:0]
+@200
+-SYSCON
+@28
+[color] 2
+rv32imc_ss_handshake.reset
+[color] 2
+rv32imc_ss_handshake.clk
+@22
+[color] 3
+rv32imc_ss_handshake.pc_current[31:0]
+[color] 3
+rv32imc_ss_handshake.pc_next[31:0]
+[color] 5
+rv32imc_ss_handshake.instr_addr[31:0]
+[color] 5
+rv32imc_ss_handshake.instr_data_i[31:0]
+@28
+[color] 5
+rv32imc_ss_handshake.instr_ack
+[color] 7
+rv32imc_ss_handshake.if_valid
+@22
+[color] 7
+rv32imc_ss_handshake.if_instruction[31:0]
+rv32imc_ss_handshake.if_address[31:0]
+rv32imc_ss_handshake.immediate[31:0]
+rv32imc_ss_handshake.func[5:0]
+@28
+rv32imc_ss_handshake.instr_err
+rv32imc_ss_handshake.instr_req
+@200
+-Instruction Fetcher
+-Branch Unit
+@28
+rv32imc_ss_handshake.br_cond[2:0]
+rv32imc_ss_handshake.br_is_cond
+rv32imc_ss_handshake.br_is_jmp
+[color] 2
+rv32imc_ss_handshake.branch_taken
+@200
+-Program Counter
+@22
+[color] 7
+rv32imc_ss_handshake.pc_overwrite_data[31:0]
+@28
+[color] 7
+rv32imc_ss_handshake.pc_overwrite_enable
+[color] 7
+rv32imc_ss_handshake.pc_stall
+@200
+-Registerfile
+@28
+[color] 3
+rv32imc_ss_handshake.rf_write0_enable
+@22
+[color] 3
+rv32imc_ss_handshake.rf_read0_index[4:0]
+[color] 3
+rv32imc_ss_handshake.rf_read1_index[4:0]
+[color] 3
+rv32imc_ss_handshake.rf_write0_index[4:0]
+[color] 3
+rv32imc_ss_handshake.rf_read1_data[31:0]
+[color] 3
+rv32imc_ss_handshake.rf_read0_data[31:0]
+[color] 3
+rv32imc_ss_handshake.rf_write0_data[31:0]
+@28
+rv32imc_ss_handshake.wb_source[1:0]
+@200
+-Instruction Decoder
+@29
+rv32imc_ss_handshake.id_instruction_format[5:0]
+@28
+rv32imc_ss_handshake.is_compressed
+@200
+-ALU
+@22
+rv32imc_ss_handshake.alu_func[4:0]
+@28
+rv32imc_ss_handshake.alu_op0_use_pc
+rv32imc_ss_handshake.alu_op1_use_imm
+@22
+rv32imc_ss_handshake.alu_read0_data[31:0]
+rv32imc_ss_handshake.alu_read1_data[31:0]
+rv32imc_ss_handshake.alu_result[31:0]
+@200
+-Load Store Unit
+@28
+rv32imc_ss_handshake.lsu_wr
+rv32imc_ss_handshake.lsu_stall
+rv32imc_ss_handshake.lsu_valid
+@22
+rv32imc_ss_handshake.lsu_req_type[3:0]
+rv32imc_ss_handshake.lsu_address[31:0]
+rv32imc_ss_handshake.lsu_data_o[31:0]
+@28
+rv32imc_ss_handshake.data_req
+rv32imc_ss_handshake.data_wr
+rv32imc_ss_handshake.data_ack
+rv32imc_ss_handshake.data_err
+@22
+rv32imc_ss_handshake.data_be[3:0]
+rv32imc_ss_handshake.data_addr[31:0]
+rv32imc_ss_handshake.data_data_i[31:0]
+rv32imc_ss_handshake.data_data_o[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
