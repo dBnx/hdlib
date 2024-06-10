@@ -109,6 +109,183 @@ async def test_i_jalr(dut) -> None:
 
     exec_nop(dut)
 
+@cocotb.test()
+async def test_b_beq_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = 100
+    rf["x6"] = 100
+    set_registerfile(dut, rf)
+    instr = 0xfe6288e3 # beq x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_beq_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = 100
+    rf["x6"] = 101
+    set_registerfile(dut, rf)
+    instr = 0xfe6288e3 # beq x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_blt_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = +100
+    set_registerfile(dut, rf)
+    instr = 0xfe62c8e3 # blt x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_blt_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = +100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62c8e3 # blt x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bge_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62d8e3 # bge x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bge_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = +100
+    set_registerfile(dut, rf)
+    instr = 0xfe62d8e3 # bge x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bltu_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = +100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62e8e3 # bltu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bltu_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = +100
+    set_registerfile(dut, rf)
+    instr = 0xfe62e8e3 # bltu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bgeu_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62f8e3 # bgeu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bgeu_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = +100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62f8e3 # bgeu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+# TODO: Missing "system" instructions 
+# FENCE
+# FENCE.TSO
+# PAUSE
+# ECALL
+# BREAK
+
 def test_runner():
     import os
     from pathlib import Path

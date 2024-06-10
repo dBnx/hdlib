@@ -106,9 +106,10 @@ module rv32_mod_instruction_decoder_func (
         ram_wr = 1;
       end
       6'b001100: begin  // B Type - Conditional
-        br_cond = func[2:0];  // FIXME: Check!
+        br_cond = func[2:0];
         br_is_cond = 1;
-        // Needs two registers. TODO: Implement offset =!= 0
+        alu_op0_use_pc = 1;
+        alu_op1_use_imm = 1;
       end
       6'b000010: begin  // U Type - LUI AUIPC
         rf_write0_enable = 1;

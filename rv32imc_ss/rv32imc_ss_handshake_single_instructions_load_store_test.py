@@ -61,6 +61,15 @@ async def test_foo(dut) -> None:
 
     exec_nop(dut)
 
+# LB
+# LH
+# LW
+# LBU
+# LHU
+# SB
+# SH
+# SW
+
 def test_runner():
     import os
     from pathlib import Path
