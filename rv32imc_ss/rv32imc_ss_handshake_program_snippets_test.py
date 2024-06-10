@@ -48,26 +48,58 @@ async def run_program(dut, program: dict[int, int], memory: dict[int, int] = dic
     while True:
         instr_fetch_addr = int(dut.pc_current.value)
         if instr_fetch_addr not in program:
-            print(f"{dut.branch_taken.value=}")
-            print(f"{dut.pc_overwrite_data.value=}")
+            # print(f"{dut.branch_taken.value=}")
+            # print(f"{dut.pc_overwrite_data.value=}")
             if dut.branch_taken.value == 1 and int(dut.pc_overwrite_data.value) in program:
-                print("Jump at end of valid program region.")
+                # print("Jump at end of valid program region.")
+                pass
             else:
-                print(f"{hex(instr_fetch_addr)} not in program. Quitting.")
+                #             await Timer(1, "ps")print(f"{hex(instr_fetch_addr)} not in program. Quitting.")
                 break
 
         if instr_fetch_addr in program:
             dut.instr_ack.value = 1
             dut.instr_data_i.value = program[instr_fetch_addr]
-            print(f"Prog @ {hex(instr_fetch_addr)}: {hex(program[instr_fetch_addr])}")
+            # print(f"Prog @ {hex(instr_fetch_addr)}: {hex(program[instr_fetch_addr])}")
         else:
             dut.instr_ack.value = 0
 
+        # Time needed for combinatorics to work, otherwise _some_ things are delayed _by the simulation_ until the
+        # next clock edge ..
+        await Timer(1, "ps")
         await RisingEdge(dut.clk)
+        await Timer(1, "ps") 
 
     dut.instr_ack.value = 0
 
     return dict()
+
+@cocotb.test()
+async def test_first_instruction(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    base_addr = int(dut.pc_current.value)
+    program = {
+        base_addr + 0x00: 0x00108093, # addi x1, x1, 1
+        base_addr + 0x04: 0x00000013, # addi x0, x0, 0
+        base_addr + 0x08: 0x00000013, # addi x0, x0, 0
+    }
+
+    initial_x1 = get_registerfile(dut)["x1"]
+
+    program_runner = cocotb.start_soon(run_program(dut, program))
+    timeout = ClockCycles(dut.clk, 12)
+    await First(program_runner, timeout)
+
+    x1 = get_registerfile(dut)["x1"]
+
+    n_increments = x1 - initial_x1
+    assert n_increments == 1, "If not, first instruction is executed multiple times"
+
+    # Better trace:
+    await exec_nop(dut, count=2)
 
 @cocotb.test()
 async def test_jal_loop(dut):
@@ -80,12 +112,12 @@ async def test_jal_loop(dut):
         base_addr + 0x00: 0x00000013, # addi x0, x0, 0
         base_addr + 0x04: 0x00108093, # addi x1, x1, 1
         base_addr + 0x08: 0x00108093, # addi x1, x1, 1
-        base_addr + 0x0C: 0xFF9FF06F, # jal  x0, -4 
+        base_addr + 0x0C: 0xFF9FF06F, # jal  x0, -8
         # base_addr + 0x0C: 0xFFDFF06F, # jal  x0, -4 
     }
 
-    for k, v in program.items():
-        print(f"{hex(k):10}: {hex(v):10}")
+    #for k, v in program.items():
+    #    print(f"{hex(k):10}: {hex(v):10}")
 
     initial_x1 = get_registerfile(dut)["x1"]
     program_runner = cocotb.start_soon(run_program(dut, program))
@@ -94,7 +126,6 @@ async def test_jal_loop(dut):
 
     x1 = get_registerfile(dut)["x1"]
     n_increments = x1 - initial_x1
-    print(f"Increments: {n_increments}")
     assert n_increments >= 10
 
     # Better trace:

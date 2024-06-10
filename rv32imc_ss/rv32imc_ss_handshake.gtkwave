@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
-[*] Mon Jun 10 07:39:54 2024
+[*] Mon Jun 10 12:06:54 2024
 [*]
 [dumpfile] "/home/dave/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Mon Jun 10 07:36:52 2024"
-[dumpfile_size] 17366
+[dumpfile_mtime] "Mon Jun 10 12:06:18 2024"
+[dumpfile_size] 16896
 [savefile] "/home/dave/hdlib/rv32imc_ss/rv32imc_ss_handshake.gtkwave"
 [timestart] 0
 [size] 1920 1001
-[pos] 155 137
-*-13.300000 44020 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 233 206
+*-13.300000 17390 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
 [signals_width] 319
 [sst_expanded] 1
-[sst_vpaned_height] 207
+[sst_vpaned_height] 173
 @22
 rv32imc_ss_handshake.INITIAL_GP[31:0]
 rv32imc_ss_handshake.INITIAL_SP[31:0]
@@ -30,28 +30,30 @@ rv32imc_ss_handshake.clk
 rv32imc_ss_handshake.pc_current[31:0]
 [color] 3
 rv32imc_ss_handshake.pc_next[31:0]
+rv32imc_ss_handshake.immediate[31:0]
+rv32imc_ss_handshake.func[5:0]
+@200
+-Branch Unit
+@28
+[color] 7
+rv32imc_ss_handshake.if_valid
+@22
+[color] 1
+rv32imc_ss_handshake.if_instruction[31:0]
+@200
+-IF Interface
+@28
+rv32imc_ss_handshake.instr_req
+[color] 5
+rv32imc_ss_handshake.instr_ack
+rv32imc_ss_handshake.instr_err
+@22
 [color] 5
 rv32imc_ss_handshake.instr_addr[31:0]
 [color] 5
 rv32imc_ss_handshake.instr_data_i[31:0]
-@28
-[color] 5
-rv32imc_ss_handshake.instr_ack
-[color] 7
-rv32imc_ss_handshake.if_valid
-@23
-[color] 7
-rv32imc_ss_handshake.if_instruction[31:0]
-@22
-rv32imc_ss_handshake.if_address[31:0]
-rv32imc_ss_handshake.immediate[31:0]
-rv32imc_ss_handshake.func[5:0]
-@28
-rv32imc_ss_handshake.instr_err
-rv32imc_ss_handshake.instr_req
 @200
 -Instruction Fetcher
--Branch Unit
 @28
 rv32imc_ss_handshake.br_cond[2:0]
 rv32imc_ss_handshake.br_is_cond
@@ -60,12 +62,13 @@ rv32imc_ss_handshake.br_is_jmp
 rv32imc_ss_handshake.branch_taken
 @200
 -Program Counter
+@29
+[color] 7
+rv32imc_ss_handshake.pc_overwrite_enable
 @22
 [color] 7
 rv32imc_ss_handshake.pc_overwrite_data[31:0]
 @28
-[color] 7
-rv32imc_ss_handshake.pc_overwrite_enable
 [color] 7
 rv32imc_ss_handshake.pc_stall
 @200
