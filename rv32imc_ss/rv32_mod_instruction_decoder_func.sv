@@ -33,8 +33,8 @@ typedef bit [2:0] br_condition_t;
 
 module rv32_mod_instruction_decoder_func (
     input [5:0] instruction_format,  // or opcode?
-    input [2:0] funct3,
-    input [0:0] b30,
+    input [4:0] func,
+    input [0:0] is_mem_or_io,
 
     output logic             rf_write0_enable,
     output logic             alu_op0_use_pc,
@@ -77,27 +77,27 @@ module rv32_mod_instruction_decoder_func (
     case (instruction_format)
       6'b100000: begin  // R Type
         rf_write0_enable = 1;
-        alu_func[2:0] = funct3;
+        alu_func = func; // TODO: Reduce func to 5 bit (?)
       end
       6'b010000: begin  // I Type - Op or Loads! // TODO: Impl load
         rf_write0_enable = 1;
         alu_op1_use_imm  = 1;
         if (1 == 1) begin  // opcode != `OP_LOAD ) begin
-          alu_func[2:0] = funct3;
+          alu_func = func;
         end else begin
-          wb_source = `WB_SOURCE_LSU;
-          alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
-          ram_req[2:0]   = funct3;  // Width and signdness
+          wb_source      = `WB_SOURCE_LSU;
+          // alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+          ram_req[2:0]   = func[2:0];  // Width and signed-ness
         end
       end
       6'b001000: begin  // S Type - Store
         alu_op1_use_imm = 1;
-        ram_req[2:0] = funct3;  // Width and signdness
-        alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+        ram_req = func[3:0];  // Width and signdness // TODO: Check!
+        // alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
         ram_wr = 1;
       end
       6'b001100: begin  // B Type - Conditional
-        br_cond = funct3;  // FIXME: Check!
+        br_cond = func[2:0];  // FIXME: Check!
         br_is_cond = 1;
         // Needs two registers. TODO: Implement offset =!= 0
       end
@@ -118,58 +118,6 @@ module rv32_mod_instruction_decoder_func (
       end
     endcase
   end
-  /*
-    always_comb begin
-        case(opcode) 
-            OP_OP_IMM  : // I
-                is_i_type = 1;
-                break;
-            OP_OP_IMM_32: // I
-                is_i_type = 1;
-                break;
-            OP_LUI     : // U
-                is_u_type = 1;
-                break;
-            OP_AUIPC   : // U
-                is_u_type = 1;
-                break;
-            OP_OP      : // R
-                is_r_type = 1;
-                break;
-            OP_JAL     : // J
-                is_j_type = 1;
-                break;
-            OP_JALR    : // I
-                is_i_type = 1;
-                break;
-            OP_BRANCH  : // B
-                is_s_type = 1;
-                is_s_subtype_b = 1;
-                break;
-            OP_LOAD    : // I
-                is_i_type = 1;
-                break;
-            OP_STORE   : // S
-                is_s_type = 1;
-                break;
-            OP_MISC_MEM: // I
-                is_i_type = 1;
-                break;
-            OP_SYSTEM  : // I
-                is_i_type = 1;
-                break;
-            default:
-                is_r_type = 0;
-                is_i_type = 0;
-                is_s_type = 0;
-                is_u_type = 0;
-                is_u_subtype_j = 0;
-                is_s_subtype_b = 0;
-                break;
-        endcase
-    end
-*/
-
   /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;

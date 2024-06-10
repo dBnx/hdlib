@@ -13,7 +13,7 @@ module rv32_mod_alu #(
 );
   logic f_alternate;
   logic [2:0] f_operation;
-  assign f_alternate = func[3];
+  assign f_alternate = func[4];
   assign f_operation = func[2:0];
 
   

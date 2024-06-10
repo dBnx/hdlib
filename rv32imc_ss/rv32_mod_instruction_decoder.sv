@@ -19,8 +19,9 @@ module rv32_mod_instruction_decoder (
     output [ 4:0] rf_write0_index,
 
     output [ 5:0] instruction_format,
-    output [ 5:0] func,
-    output        is_compressed
+    output [ 4:0] func,
+    output logic      is_mem_or_io,
+    output logic      is_compressed
 );
     bit [6:0] opcode;
     assign opcode = instruction[6:0];
@@ -48,9 +49,12 @@ module rv32_mod_instruction_decoder (
     // Function
     bit [2:0] funct3;
     bit [6:0] funct7;
+    bit       alternative_func;
     assign funct3 = instruction[14:12];
     assign funct7 = instruction[31:25];
-    
+    assign alternative_func = funct7[5];
+    assign func = {1'b0, alternative_func, funct3}; // TODO: Remaining bits!
+
     /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;
@@ -78,6 +82,7 @@ module rv32_mod_instruction_decoder (
         is_u_type = 0;
         is_u_subtype_j = 0;
         is_s_subtype_b = 0;
+        is_mem_or_io = 0;
 
         if( !is_compressed ) begin
             case(opcode[6:2]) 
@@ -101,10 +106,14 @@ module rv32_mod_instruction_decoder (
                     is_s_type = 1;
                     is_s_subtype_b = 1;
                 end
-                `OP_LOAD    : // I
+                `OP_LOAD    : begin // I
                     is_i_type = 1;
-                `OP_STORE   : // S
+                    is_mem_or_io = 1;
+                end
+                `OP_STORE   : begin // S
                     is_s_type = 1;
+                    is_mem_or_io = 1;
+                end
                 `OP_MISC_MEM: // I
                     is_i_type = 1;
                 `OP_SYSTEM  : // I

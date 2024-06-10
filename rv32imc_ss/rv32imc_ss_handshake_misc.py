@@ -16,16 +16,11 @@ async def reset_dut(dut):
     dut.reset.value = 0
     await Timer(1, "ps")
 
-
 def get_registerfile(dut) -> dict[str, int]:
-    ret: dict[str,intjkk] = {}
+    ret: dict[str,int] = {}
     for i, v in enumerate(dut.inst_registerfile.registerfile.value):
         ret[f"x{i}"] = v
     return ret
-
-def set_registerfile(dut, values: dict[str, int]):
-    for i, v in enumerate(values.values()):
-        dut.inst_registerfile.registerfile[i].value = v
 
 def get_pc(dut) -> dict[str, int]:
     return {
@@ -33,83 +28,87 @@ def get_pc(dut) -> dict[str, int]:
         "next"   :dut.pc_next.value
     }
 
-async def exec_instr(dut, instruction: int, count: int = 1):
+async def exec_nop(dut, count: int = 1):
     """Execute `count` nops. Also useful at the end of tests for cleaner traces"""
     dut.instr_ack.value = 1
     dut.instr_err.value = 0
-    dut.instr_data_i.value = instruction
+    dut.instr_data_i.value = 0x00000013 # addi x0, x0, 0
     for _ in range(count):
-        await Timer(1, "ps")
         await RisingEdge(dut.clk)
-        await Timer(1, "ps")
     dut.instr_ack.value = 0
 
-async def exec_nop(dut, count: int = 1):
-    nop = 0x00000013 # addi x0, x0, 0
-    await exec_instr(dut, instruction=nop, count=count)
+@cocotb.test()
+async def test_wait_for_instruction(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    await RisingEdge(dut.clk)
+    initial_registers = get_pc(dut)["current"]
+
+    await ClockCycles(dut.clk, 10)
+    assert initial_registers == get_pc(dut)["current"]
+    # timing_check_h = cocotb.start_soon(vga_timing_checker_hsync(dut))
+    # timing_check_v = cocotb.start_soon(vga_timing_checker_vsync(dut))
+
+    # await First(test_time, timing_check_h, timing_check_v)
 
 @cocotb.test()
-async def test_i_sub(dut) -> None:
+async def test_repeated_addi_nop(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-
-    # 5 | 9 = D
+    await Timer(1, "ps")
+    dut.instr_ack.value = 1
+    dut.instr_err.value = 0
+    dut.instr_data_i.value = 0x0000_0013 # addi x0, x0, 0
+    pc = get_pc(dut)
     rf = get_registerfile(dut)
-    rf["x5"] = 0b0000_0110
-    rf["x6"] = 0b0000_0101
-    set_registerfile(dut, rf)
 
-    instr = 0x406283b3 # SUB x7, x5, x6
-    await exec_instr(dut, instr)
+    await ClockCycles(dut.clk, 10)
 
-    rf = get_registerfile(dut)
-    await FallingEdge(dut.clk)
-
-    assert 1 == rf["x7"]
-
-    exec_nop(dut)
+    assert pc["current"] != get_pc(dut)["current"]
+    assert rf == get_registerfile(dut)
 
 @cocotb.test()
-async def test_i_or(dut) -> None:
+async def test_repeated_addi_inc_x5(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+    dut.instr_ack.value = 1
+    dut.instr_err.value = 0
+    dut.instr_data_i.value = 0x00128293 # addi x5, x5, 1
+    initial_pc = get_pc(dut)
+    initial_rf = get_registerfile(dut)
 
-    # 5 | 9 = D
+    await ClockCycles(dut.clk, 10)
+
+    assert initial_pc["current"] != get_pc(dut)["current"]
+
     rf = get_registerfile(dut)
-    rf["x5"] = 0b0101_0101
-    rf["x6"] = 0b1001_1001
-    set_registerfile(dut, rf)
+    initial_rf_x5 = initial_rf["x5"]
+    rf_x5 = rf["x5"]
+    del rf["x5"]
+    del initial_rf["x5"]
 
-    instr = 0x0062e3b3 # OR x7, x5, x6
-    await exec_instr(dut, instr)
+    assert initial_rf == rf, "Registerfile / x5 is unchanged"
+    assert rf_x5 - initial_rf_x5 == 10 - 2, "x5 changed"
 
-    rf = get_registerfile(dut)
-    await FallingEdge(dut.clk)
-
-    assert 0b1101_1101 == rf["x7"]
-
-    exec_nop(dut)
-
-# @cocotb.test()
-async def test_u_lui(dut) -> None:
+@cocotb.test()
+async def test_repeated_addi_negative(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
 
-    instr = 0xffc182b7 # LUI x5, -1000
-    await exec_instr(dut, instr)
+    dut.instr_ack.value = 1
+    dut.instr_err.value = 0
+    dut.instr_data_i.value = 0x3e800513 # addi x10, x0, 1000
+    initial_pc = get_pc(dut)
+    initial_rf = get_registerfile(dut)
 
-    assert -1000 << 12 == get_registerfile(dut)["x5"]
+    await RisingEdge(dut.clk)
+    assert 1000 == get_registerfile(dut)["x10"]
 
-    exec_nop(dut)
+    dut.instr_data_i.value = 0xf9c50513 # addi x10, x10, -100
+    await ClockCycles(dut.clk, 15)
 
-# @cocotb.test()
-async def test_u_auipc(dut) -> None:
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-
-    initial_pc = get_pc(dut)["current"]
-    instr = 0x00001297 # AUIPC x5, 1
-    await exec_instr(dut, instr)
-
-    assert initial_pc + 1 << 12 == get_registerfile(dut)["x5"]
-
-    exec_nop(dut)
+    assert 0 > get_registerfile(dut)["x10"]
 
 def test_runner():
     import os

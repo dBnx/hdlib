@@ -75,7 +75,8 @@ module rv32imc_ss_handshake #(
   logic rf_write0_enable;
   logic [4:0] rf_read0_index, rf_read1_index, rf_write0_index;
   logic          [31:0] immediate;
-  logic          [ 5:0] func;
+  logic          [ 4:0] func;
+  logic                 is_mem_or_io;
   logic                 is_compressed;
 
   logic                 alu_op0_use_pc;
@@ -144,13 +145,14 @@ module rv32imc_ss_handshake #(
       .rf_write0_index(rf_write0_index),
       .instruction_format(id_instruction_format),
       .func(func),
+      .is_mem_or_io(is_mem_or_io),
       .is_compressed(is_compressed)
   );
 
   rv32_mod_instruction_decoder_func inst_instr_dec_func (
       .instruction_format(id_instruction_format),
-      .funct3(func[2:0]),
-      .b30(if_instruction[30]),
+      .func(func),
+      .is_mem_or_io(is_mem_or_io),
 
       .rf_write0_enable(rf_write0_enable),
       .alu_op0_use_pc(alu_op0_use_pc),
