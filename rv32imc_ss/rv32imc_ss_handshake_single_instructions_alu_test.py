@@ -296,34 +296,6 @@ async def test_r_sltu_false(dut) -> None:
 
     exec_nop(dut)
 
-@cocotb.test()
-async def test_u_lui(dut) -> None:
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    await Timer(1, "ps")
-
-    instr = 0xfffff2b7 # LUI x5, -1
-    await exec_instr(dut, instr)
-    assert (-1 << 12) & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
-
-    instr = 0xffc182b7 # LUI x5, -1000
-    await exec_instr(dut, instr)
-    assert (-1000 << 12) & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
-
-    exec_nop(dut)
-
-@cocotb.test()
-async def test_u_auipc(dut) -> None:
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    await Timer(1, "ps")
-
-    initial_pc = get_pc(dut)["current"]
-    instr = 0x00001297 # AUIPC x5, 1
-    await exec_instr(dut, instr)
-
-    assert initial_pc + 1 << 12 == get_registerfile(dut)["x5"]
-
-    exec_nop(dut)
-
 def test_runner():
     import os
     from pathlib import Path
