@@ -64,7 +64,7 @@ module rv32imc_ss_handshake #(
     case (wb_source)
       // TODO: Move encoding inside instr decode (?)
       `WB_SOURCE_ALU: rf_write0_data = alu_result;
-      `WB_SOURCE_PC:  rf_write0_data = pc_current;
+      `WB_SOURCE_PC:  rf_write0_data = pc_next; // To register must be next
       `WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
       default: rf_write0_data = 0;
     endcase
@@ -75,7 +75,7 @@ module rv32imc_ss_handshake #(
   logic rf_write0_enable;
   logic [4:0] rf_read0_index, rf_read1_index, rf_write0_index;
   logic          [31:0] immediate;
-  logic          [ 4:0] func;
+  logic          [ 5:0] func;
   logic                 is_mem_or_io;
   logic                 is_compressed;
 

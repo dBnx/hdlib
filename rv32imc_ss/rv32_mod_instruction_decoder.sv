@@ -19,7 +19,7 @@ module rv32_mod_instruction_decoder (
     output [ 4:0] rf_write0_index,
 
     output [ 5:0] instruction_format,
-    output [ 4:0] func,
+    output [ 5:0] func,
     output logic      is_mem_or_io,
     output logic      is_compressed
 );
@@ -56,6 +56,7 @@ module rv32_mod_instruction_decoder (
     // Tr
     assign func[3:0] = {alternative_func, funct3};
     assign func[4] = opcode[6:2] == `OP_LUI;
+    assign func[5] = opcode[6:2] == `OP_JALR;
 
     /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;

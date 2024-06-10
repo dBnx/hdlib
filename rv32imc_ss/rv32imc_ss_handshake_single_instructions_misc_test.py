@@ -72,7 +72,40 @@ async def test_u_auipc(dut) -> None:
     instr = 0x00001297 # AUIPC x5, 1
     await exec_instr(dut, instr)
 
-    assert initial_pc + 1 << 12 == get_registerfile(dut)["x5"]
+    assert initial_pc + (1 << 12) == get_registerfile(dut)["x5"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_j_jal(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    instr = 0xfd9ff0ef # JAL x1, -40
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 40) & 0xFFFF_FFFF == get_pc(dut)["current"]
+    assert initial_pc + 4 == get_registerfile(dut)["x1"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_i_jalr(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 100
+    set_registerfile(dut, rf)
+
+    instr = 0x002280e7 # jalr x1, 2(x5)
+    await exec_instr(dut, instr)
+
+    assert initial_pc + 4 == get_registerfile(dut)["x1"]
+    assert 100 + 2 == get_pc(dut)["current"]
 
     exec_nop(dut)
 

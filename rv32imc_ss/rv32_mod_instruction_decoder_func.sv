@@ -33,7 +33,7 @@ typedef bit [2:0] br_condition_t;
 
 module rv32_mod_instruction_decoder_func (
     input [5:0] instruction_format,  // or opcode?
-    input [4:0] func,
+    input [5:0] func,
     input [0:0] is_mem_or_io,
 
     output logic             rf_write0_enable,
@@ -60,6 +60,9 @@ module rv32_mod_instruction_decoder_func (
   // assign funct3 = instruction[14:12];
   // assign funct7 = instruction[31:25];
 
+  bit is_jalr;
+  assign is_jalr = func[5];
+
 
   always_comb begin
     rf_write0_enable = 0;
@@ -77,17 +80,23 @@ module rv32_mod_instruction_decoder_func (
     case (instruction_format)
       6'b100000: begin  // R Type
         rf_write0_enable = 1;
-        alu_func = func;
+        alu_func = func[4:0];
       end
       6'b010000: begin  // I Type - Op or Loads! // TODO: Impl load
         rf_write0_enable = 1;
         alu_op1_use_imm  = 1;
-        if (!is_mem_or_io) begin
-          alu_func = func;
-        end else begin
+        if (is_mem_or_io) begin
           wb_source      = `WB_SOURCE_LSU;
           // alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
           ram_req[2:0]   = func[2:0];  // Width and signed-ness
+        end else if (is_jalr) begin
+          rf_write0_enable = 1;
+          alu_op0_use_pc = 0;
+          alu_op1_use_imm = 1;
+          br_jmp = 1;
+          wb_source = `WB_SOURCE_PC;
+        end else begin
+          alu_func = func[4:0];
         end
       end
       6'b001000: begin  // S Type - Store
