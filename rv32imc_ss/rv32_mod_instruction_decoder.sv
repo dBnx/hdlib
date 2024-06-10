@@ -52,7 +52,8 @@ module rv32_mod_instruction_decoder (
     bit       alternative_func;
     assign funct3 = instruction[14:12];
     assign funct7 = instruction[31:25];
-    assign alternative_func = funct7[5];
+    assign alternative_func = funct7[5] && (!is_i_type || is_i_type && funct3 == 3'b101); // FIXME: To whitelist -> r_type?
+    // Tr
     assign func[3:0] = {alternative_func, funct3};
     assign func[4] = opcode[6:2] == `OP_LUI;
 

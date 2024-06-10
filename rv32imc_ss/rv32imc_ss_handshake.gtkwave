@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
-[*] Mon Jun 10 14:12:26 2024
+[*] Mon Jun 10 17:28:26 2024
 [*]
 [dumpfile] "/home/dave/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Mon Jun 10 14:12:14 2024"
-[dumpfile_size] 18332
+[dumpfile_mtime] "Mon Jun 10 17:25:41 2024"
+[dumpfile_size] 15956
 [savefile] "/home/dave/hdlib/rv32imc_ss/rv32imc_ss_handshake.gtkwave"
 [timestart] 0
 [size] 1920 1001
-[pos] 311 275
-*-13.300000 9980 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 337 298
+*-13.300000 11850 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
 [signals_width] 399
 [sst_expanded] 1
-[sst_vpaned_height] 226
+[sst_vpaned_height] 213
 @22
 rv32imc_ss_handshake.INITIAL_GP[31:0]
 rv32imc_ss_handshake.INITIAL_SP[31:0]
@@ -100,14 +100,27 @@ rv32imc_ss_handshake.id_instruction_format[5:0]
 rv32imc_ss_handshake.is_compressed
 @200
 -ALU
-@23
-rv32imc_ss_handshake.alu_func[4:0]
 @28
+rv32imc_ss_handshake.alu_func[4:0]
 rv32imc_ss_handshake.alu_op0_use_pc
 rv32imc_ss_handshake.alu_op1_use_imm
 @22
+[color] 7
 rv32imc_ss_handshake.alu_read0_data[31:0]
+@421
+[color] 5
+rv32imc_ss_handshake.alu_read0_data[31:0]
+@22
+[color] 7
 rv32imc_ss_handshake.alu_read1_data[31:0]
+@421
+[color] 5
+rv32imc_ss_handshake.alu_read1_data[31:0]
+@22
+[color] 7
+rv32imc_ss_handshake.alu_result[31:0]
+@421
+[color] 5
 rv32imc_ss_handshake.alu_result[31:0]
 @200
 -Load Store Unit

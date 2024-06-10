@@ -38,8 +38,8 @@ module rv32_mod_alu #(
   always_comb begin
     // case ({1'b0, func[2:0]}) // Always use default operation
     case (func[3:0]) // NOTE: What do to with last bit?
-      `ALU_OP_ADD: result = read0_data + read1_data;
-      `ALU_OP_SUB: result = read0_data - read1_data;
+      `ALU_OP_ADD: result = $signed(read0_data) + $signed(read1_data);
+      `ALU_OP_SUB: result = $signed(read0_data) - $signed(read1_data);
       `ALU_OP_SLL: result = read0_data << read1_data[4:0];
       `ALU_OP_SLT:  result = {31'h0, $signed(read0_data) < $signed(read1_data)};
       `ALU_OP_SLTU:  result = {31'h0, read0_data < read1_data};
@@ -52,6 +52,5 @@ module rv32_mod_alu #(
       // ALU_OP_MUL: result = read0_data * read1_data;
       default: result = read0_data;
     endcase
-    ;
   end
 endmodule

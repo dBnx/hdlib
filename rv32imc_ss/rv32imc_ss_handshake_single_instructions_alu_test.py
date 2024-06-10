@@ -66,7 +66,7 @@ async def test_r_add(dut) -> None:
 
     assert 0xB == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_sub(dut) -> None:
@@ -87,7 +87,7 @@ async def test_r_sub(dut) -> None:
 
     assert 1 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_and(dut) -> None:
@@ -108,7 +108,7 @@ async def test_r_and(dut) -> None:
 
     assert 0b0001_0001 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_or(dut) -> None:
@@ -129,7 +129,7 @@ async def test_r_or(dut) -> None:
 
     assert 0b1101_1101 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_xor(dut) -> None:
@@ -150,7 +150,7 @@ async def test_r_xor(dut) -> None:
 
     assert 0b1100_1100 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_sll(dut) -> None:
@@ -171,7 +171,7 @@ async def test_r_sll(dut) -> None:
 
     assert 0x18 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_srl(dut) -> None:
@@ -192,7 +192,7 @@ async def test_r_srl(dut) -> None:
 
     assert 0x0FFF_FFFF == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_sra(dut) -> None:
@@ -212,7 +212,7 @@ async def test_r_sra(dut) -> None:
 
     assert 0xFFFF_FFFF == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_slt_true(dut) -> None:
@@ -232,7 +232,7 @@ async def test_r_slt_true(dut) -> None:
 
     assert 1 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_slt_false(dut) -> None:
@@ -252,7 +252,7 @@ async def test_r_slt_false(dut) -> None:
 
     assert 0 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_sltu_true(dut) -> None:
@@ -273,7 +273,7 @@ async def test_r_sltu_true(dut) -> None:
 
     assert 1 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_r_sltu_false(dut) -> None:
@@ -294,7 +294,187 @@ async def test_r_sltu_false(dut) -> None:
 
     assert 0 == rf["x7"]
 
-    exec_nop(dut)
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_addi(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 100
+    set_registerfile(dut, rf)
+
+    instr = 0xc1828393 # ADDI x7, x5, -1000
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert -900 & 0xFFFF_FFFF == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_slti_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = -5
+    set_registerfile(dut, rf)
+
+    instr = 0x0052a393 # SLTI x7, x5, +5
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 1 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_slti_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 5
+    set_registerfile(dut, rf)
+
+    instr = 0xffb2a393 # SLTI x7, x5, -5
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 0 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_xori(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0b0101
+    set_registerfile(dut, rf)
+
+    instr = 0x0032c393 # XORI x7, x5, 0b0011
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 0b0110 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_ori(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0b0101
+    set_registerfile(dut, rf)
+
+    instr = 0x0032e393 # ORI x7, x5, 0b0011
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 7 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_andi(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0b0101
+    set_registerfile(dut, rf)
+
+    instr = 0x0032F393 # ANDI x7, x5, 0b0011
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 1 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_slli(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0b0011
+    set_registerfile(dut, rf)
+
+    instr = 0x00329393 # SLLI x7, x5, 3
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 0b01_1000 == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_srli(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0xFFFF_FFFF
+    set_registerfile(dut, rf)
+
+    instr = 0x0042d393 # SRLI x7, x5, 4
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 0x0FFF_FFFF == rf["x7"]
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_srai(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0xFFFF_FFFF
+    set_registerfile(dut, rf)
+
+    instr = 0x4042D393 # SRAI x7, x5, 4
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert 0xFFFF_FFFF == rf["x7"]
+
+    await exec_nop(dut)
 
 def test_runner():
     import os
