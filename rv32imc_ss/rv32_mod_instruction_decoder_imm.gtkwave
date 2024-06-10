@@ -1,0 +1,53 @@
+[*]
+[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
+[*] Mon Jun 10 06:46:02 2024
+[*]
+[dumpfile] "/home/dave/hdlib/rv32imc_ss/build/rv32_mod_instruction_decoder_imm/dump.vcd"
+[dumpfile_mtime] "Mon Jun 10 06:44:36 2024"
+[dumpfile_size] 3495
+[savefile] "/home/dave/hdlib/rv32imc_ss/rv32_mod_instruction_decoder_imm.gtkwave"
+[timestart] 0
+[size] 1920 1001
+[pos] 25 22
+*-1.613334 16 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 315
+[sst_expanded] 1
+[sst_vpaned_height] 279
+@200
+-Inputs
+@22
+rv32_mod_instruction_decoder_imm.instruction[31:0]
+@29
+rv32_mod_instruction_decoder_imm.instruction_format[5:0]
+@200
+-Output
+@22
+rv32_mod_instruction_decoder_imm.immediate[31:0]
+@200
+-Internal
+@22
+[color] 1
+rv32_mod_instruction_decoder_imm.imm[31:0]
+@28
+rv32_mod_instruction_decoder_imm.imm_7[0]
+rv32_mod_instruction_decoder_imm.imm_11_8[3:0]
+rv32_mod_instruction_decoder_imm.imm_19_12[7:0]
+rv32_mod_instruction_decoder_imm.imm_20[0]
+rv32_mod_instruction_decoder_imm.imm_24_21[3:0]
+rv32_mod_instruction_decoder_imm.imm_30_20[10:0]
+rv32_mod_instruction_decoder_imm.imm_30_25[5:0]
+@22
+rv32_mod_instruction_decoder_imm.sign[30:11]
+@200
+-IType - Internal
+@28
+rv32_mod_instruction_decoder_imm.is_r_type
+rv32_mod_instruction_decoder_imm.is_i_type
+rv32_mod_instruction_decoder_imm.is_s_type
+rv32_mod_instruction_decoder_imm.is_s_subtype_b
+rv32_mod_instruction_decoder_imm.is_u_type
+rv32_mod_instruction_decoder_imm.is_u_subtype_j
+rv32_mod_instruction_decoder_imm.is_u_not_j
+[pattern_trace] 1
+[pattern_trace] 0

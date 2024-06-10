@@ -4,13 +4,46 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 
+from numpy import uint32, int32
+
 # Instruction Type: {is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j}
 ASM = {
-    "ADDI x0, x0, 0": (0x00000013, 0b10000, 0), # I Type
-    "JAL x0, -2": (0xfffff06f, 0b00011, 0xFFFF_FFFE), # 
-    "JAL x0, -4": (0xffdff06f, 0b00011, 0xFFFF_FFFC), # 
-    "JAL x0,  2": (0x0020006f, 0b00011, 0x0000_0002), # 
-    "JAL x0,  4": (0x0020006f, 0b00011, 0x0000_0004), # 
+    "R": {
+        "ADD x3, x1, x2": (0x002081b3, 0)
+        #
+    },
+    "I": {
+        "ADDI x0, x0,  0": (0x00000013,  0),
+        "ADDI x4, x4,  1": (0x00120213,  1),
+        "ADDI x4, x4, -1": (0xfff20213, -1),
+    },
+    "S": {
+        "SW x4, 1(x0)": (0x004020a3, 1),
+    },
+    "B": {
+        "BLTU x5, x6,  0": (0x0062e063,  0),
+        "BLTU x5, x6, 10": (0x0062e563, 10),
+    },
+    "U": {
+        "LUI x5, 10":   (0x0000a2b7, 10 << 12),
+        "AUIPC x5, 10": (0x0000a297, 10 << 12),
+    },
+    "J": {
+        "JAL x0,  2": (0x0020006f, 0x0000_0002),
+        "JAL x0,  4": (0x0040006f, 0x0000_0004),
+        "JAL x0, -2": (0xfffff06f, 0xFFFF_FFFE),
+        "JAL x0, -4": (0xffdff06f, 0xFFFF_FFFC),
+    },
+}
+
+# {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
+IFORMAT: dict[str,int] = {
+    "R": 0b100000,
+    "I": 0b010000,
+    "S": 0b001000,
+    "B": 0b001100,
+    "U": 0b000010,
+    "J": 0b000011,
 }
 
 @cocotb.test()
@@ -21,26 +54,53 @@ async def test_null(dut) -> None:
     assert dut.immediate.value == 0, "No input should stay 0 to reduce transitions"
 
 @cocotb.test()
-async def test_examples(dut) -> None:
-    for instr_asm, (instr_bin, instr_type, ref_imm) in ASM.items(): 
+async def test_type_r(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["R"].items(): 
         dut.instruction.value = instr_bin
-        dut.instruction_format.value = instr_type
+        dut.instruction_format.value = IFORMAT["R"]
         await Timer(1, "ps")
-        assert dut.immediate.value == ref_imm, f"{instr_asm}"
+        # assert np.array(int(dut.immediate.value)).astype(int32) == int32(ref_imm), f"{instr_asm}"
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
-    # module rv32_mod_instruction_decoder_imm (
-    #     input [31:0] instruction,
-    #     input [ 5:0] instruction_format,
-    #     output [31:0] immediate
-    # );
+@cocotb.test()
+async def test_type_i(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["I"].items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = IFORMAT["I"]
+        await Timer(1, "ps")
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
-    # await reset_dut(dut)
+@cocotb.test()
+async def test_type_s(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["S"].items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = IFORMAT["S"]
+        await Timer(1, "ps")
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
-    # timing_check_h = cocotb.start_soon(vga_timing_checker_hsync(dut))
-    # timing_check_v = cocotb.start_soon(vga_timing_checker_vsync(dut))
+@cocotb.test()
+async def test_type_b(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["B"].items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = IFORMAT["B"]
+        await Timer(1, "ps")
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
-    # await First(test_time, timing_check_h, timing_check_v)
+@cocotb.test()
+async def test_type_u(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["U"].items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = IFORMAT["U"]
+        await Timer(1, "ps")
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
+@cocotb.test()
+async def test_type_j(dut) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM["J"].items(): 
+        dut.instruction.value = instr_bin
+        dut.instruction_format.value = IFORMAT["J"]
+        await Timer(1, "ps")
+        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
 
 def test_runner():
     import os

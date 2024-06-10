@@ -5,8 +5,8 @@ module rv32_mod_instruction_decoder_imm (
 
     output [31:0] immediate
 );
-  bit is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j;
-  assign {is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j} = instruction_format[4:0];
+  bit is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j;
+  assign {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j} = instruction_format;
 
   // Different fragments used to create it. Numbers represent bit ranges.
   bit [10:0] imm_30_20;
@@ -24,14 +24,23 @@ module rv32_mod_instruction_decoder_imm (
   assign imm_20 = instruction[20];
   assign imm_7 = instruction[7];
 
+  // Helper
+  bit is_u_not_j;
+  assign is_u_not_j = is_u_type && !is_u_subtype_j;
+
   // Sign extension
-  bit [31:12] sign = {20{instruction[31]}};
+  bit [30:11] sign;
+  assign sign = {20{instruction[31]}};
+
   // Construction
-  assign immediate[0] = is_i_type ? imm_20 : (is_s_type && !is_s_subtype_b) ? imm_7 : 0;
-  assign immediate[4:1] = is_i_type || is_u_subtype_j ? imm_24_21 : is_u_type ? 0 : imm_11_8;
-  assign immediate[10:5] = is_u_type && !is_u_subtype_j ? 0 : imm_30_25;
-  assign immediate[11] = is_u_type ? 0 : is_s_subtype_b ? imm_7 : is_u_subtype_j ? imm_20 : sign[31];
-  assign immediate[19:12] = is_u_type ? imm_19_12 : sign[19:12];
-  assign immediate[30:20] = is_u_type && !is_u_subtype_j ? imm_30_20 : sign[30:20];
-  assign immediate[31] = instruction[31];
+  bit [31:0] imm;
+  assign imm[0]     = is_i_type ? imm_20 : (is_s_type && !is_s_subtype_b) ? imm_7 : 0;
+  assign imm[4:1]   = is_i_type || is_u_subtype_j ? imm_24_21 : is_u_type ? 0 : imm_11_8;
+  assign imm[10:5]  = is_u_not_j ? 0 : imm_30_25;
+  assign imm[11]    = is_u_not_j ? 0 : is_s_subtype_b ? imm_7 : is_u_subtype_j ? imm_20 : sign[11];
+  assign imm[19:12] = is_u_not_j ? imm_19_12 : sign[19:12];
+  assign imm[30:20] = is_u_not_j ? imm_30_20 : sign[30:20];
+  assign imm[31]    = instruction[31];
+
+  assign immediate = is_r_type ? 0 : imm;
 endmodule
