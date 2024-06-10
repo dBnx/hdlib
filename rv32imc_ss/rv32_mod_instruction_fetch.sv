@@ -10,15 +10,16 @@ module rv32_mod_instruction_fetch #(
     output logic        if_valid,
 
     // External interface
-    output        instr_req,
-    input         instr_ack,
-    input         instr_err,
-    output [31:0] instr_addr,
-    input  [31:0] instr_data_i
+    output logic        instr_req,
+    input               instr_ack,
+    input               instr_err,
+    output logic [31:0] instr_addr,
+    input        [31:0] instr_data_i
 );
 
   localparam bit [31:0] InstrNop = 32'h0000_0013;  // ADDI x0, x0, 0
 
+  /*
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
       if_instruction <= InstrNop;
@@ -32,6 +33,18 @@ module rv32_mod_instruction_fetch #(
         if_instruction <= InstrNop;
         if_valid       <= 0;
       end
+    end
+  end
+  */
+
+  always_comb begin
+    if (instr_ack) begin
+      if_instruction = instr_data_i;
+      if_valid       = 1;
+    end else begin
+      // Handle instr_err
+      if_instruction = InstrNop;
+      if_valid       = 0;
     end
   end
 

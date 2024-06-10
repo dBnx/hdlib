@@ -104,11 +104,10 @@ module rv32_mod_instruction_decoder_func (
       6'b000010: begin  // U Type - LUI AUIPC
         rf_write0_enable = 1;
         alu_op1_use_imm = 1;
-        alu_func[3:0] = `ALU_OP_ADD;
       end
       6'b000011: begin  // J Type - Unconditional
         alu_op0_use_pc = 1;
-        alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+        alu_op1_use_imm = 1;
         br_jmp = 1;
       end
       default: begin

@@ -28,6 +28,15 @@ def get_pc(dut) -> dict[str, int]:
         "next"   :dut.pc_next.value
     }
 
+async def exec_nop(dut, count: int = 1):
+    """Execute `count` nops. Also useful at the end of tests for cleaner traces"""
+    dut.instr_ack.value = 1
+    dut.instr_err.value = 0
+    dut.instr_data_i.value = 0x00000013 # addi x0, x0, 0
+    for _ in range(count):
+        await RisingEdge(dut.clk)
+    dut.instr_ack.value = 0
+
 @cocotb.test()
 async def test_wait_for_instruction(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
@@ -79,7 +88,7 @@ async def test_repeated_addi_inc_x5(dut) -> None:
     del rf["x5"]
     del initial_rf["x5"]
 
-    assert initial_rf == rf, "Registerfile \ x5 is unchanged"
+    assert initial_rf == rf, "Registerfile / x5 is unchanged"
     assert rf_x5 - initial_rf_x5 == 10 - 2, "x5 changed"
 
 @cocotb.test()
@@ -100,7 +109,6 @@ async def test_repeated_addi_negative(dut) -> None:
     await ClockCycles(dut.clk, 15)
 
     assert 0 > get_registerfile(dut)["x10"]
-
 
 def test_runner():
     import os
@@ -136,7 +144,8 @@ def test_runner():
         build_dir=f"build/{hdl_toplevel}",
     )
 
-    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{hdl_toplevel}_test,",
+    test_module = os.path.basename(__file__).replace(".py","")
+    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{test_module},",
                 waves=True, extra_env={"WAVES": "1"})
 
 
