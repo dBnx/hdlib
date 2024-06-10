@@ -46,9 +46,9 @@ module rv32_mod_load_store_unit #(
     // FIXME: Add handling of aligned store / loads
     always_comb begin
         case(req_size)
-        2'b01: data_be = 1'b1 << address[1:0];
-        2'b10: data_be = address[1] ? 4'b1100 : 4'b0011;
-        2'b11: data_be = 4'b1111;
+        2'b00: data_be = 1'b1 << address[1:0];
+        2'b01: data_be = address[1] ? 4'b1100 : 4'b0011;
+        2'b10: data_be = 4'b1111;
         default: data_be = 0;
         endcase
 

@@ -49,15 +49,62 @@ async def exec_nop(dut, count: int = 1):
     await exec_instr(dut, instruction=nop, count=count)
 
 @cocotb.test()
-async def test_foo(dut) -> None:
+async def test_s_sb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    initial_pc = get_pc(dut)["current"]
-    instr = 0x00001297 # AUIPC x5, 1
+    rf = get_registerfile(dut)
+    rf["x5"] = -2
+    rf["x6"] = 0x100
+    set_registerfile(dut, rf)
+
+    instr = 0x005300a3 # SB x5, 1(x6)
     await exec_instr(dut, instr)
 
-    assert initial_pc + 1 << 12 == get_registerfile(dut)["x5"]
+    assert 1 == dut.data_req.value
+    assert 1 == dut.data_wr.value
+    assert 0b0010 == dut.data_be.value
+    assert 0x100 + 0 == dut.data_addr.value
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_s_sh(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = -2
+    rf["x6"] = 0x100
+    set_registerfile(dut, rf)
+
+    instr = 0x00531323 # SH x5, 6(x6)
+    await exec_instr(dut, instr)
+
+    assert 1 == dut.data_req.value
+    assert 1 == dut.data_wr.value
+    assert 0b1100 == dut.data_be.value
+    assert 0x100 + 4 == dut.data_addr.value
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_s_sw(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = -2
+    rf["x6"] = 0x100
+    set_registerfile(dut, rf)
+
+    instr = 0x00532223 # SW x5, 4(x6)
+    await exec_instr(dut, instr)
+
+    assert 1 == dut.data_req.value
+    assert 1 == dut.data_wr.value
+    assert 0xF == dut.data_be.value
+    assert 0x100 + 4 == dut.data_addr.value
 
     exec_nop(dut)
 
@@ -66,9 +113,6 @@ async def test_foo(dut) -> None:
 # LW
 # LBU
 # LHU
-# SB
-# SH
-# SW
 
 def test_runner():
     import os
