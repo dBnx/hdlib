@@ -77,12 +77,12 @@ module rv32_mod_instruction_decoder_func (
     case (instruction_format)
       6'b100000: begin  // R Type
         rf_write0_enable = 1;
-        alu_func = func; // TODO: Reduce func to 5 bit (?)
+        alu_func = func;
       end
       6'b010000: begin  // I Type - Op or Loads! // TODO: Impl load
         rf_write0_enable = 1;
         alu_op1_use_imm  = 1;
-        if (1 == 1) begin  // opcode != `OP_LOAD ) begin
+        if (!is_mem_or_io) begin
           alu_func = func;
         end else begin
           wb_source      = `WB_SOURCE_LSU;
@@ -103,7 +103,7 @@ module rv32_mod_instruction_decoder_func (
       end
       6'b000010: begin  // U Type - LUI AUIPC
         rf_write0_enable = 1;
-        alu_op0_use_pc = 1;
+        alu_op0_use_pc = !func[4]; // Use x0 for LUI
         alu_op1_use_imm = 1;
         // TODO: Clear lower 12bit (?) -> Extra ALU Flag?
       end

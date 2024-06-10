@@ -22,7 +22,7 @@ module rv32_mod_alu #(
   `define ALU_OP_SUB  4'b1_000 // ALT_ADD
   `define ALU_OP_SLL  4'b0_001
   `define ALU_OP_SLT  4'b0_010
-  `define ALU_OP_SLTU 4'b0_010
+  `define ALU_OP_SLTU 4'b0_011
   `define ALU_OP_XOR  4'b0_100
   `define ALU_OP_SRL  4'b0_101
   `define ALU_OP_SRA  4'b1_101 // ALT SR
@@ -41,11 +41,11 @@ module rv32_mod_alu #(
       `ALU_OP_ADD: result = read0_data + read1_data;
       `ALU_OP_SUB: result = read0_data - read1_data;
       `ALU_OP_SLL: result = read0_data << read1_data[4:0];
-      `ALU_OP_SLT:  result = {31'h0, read0_data < read1_data};
-      // `ALU_OP_SLTU:  result = {31'h0, read0_data < read1_data};
+      `ALU_OP_SLT:  result = {31'h0, $signed(read0_data) < $signed(read1_data)};
+      `ALU_OP_SLTU:  result = {31'h0, read0_data < read1_data};
       `ALU_OP_XOR: result = read0_data ^ read1_data;
       `ALU_OP_SRL: result = read0_data >> read1_data[4:0];
-      `ALU_OP_SRA: result = read0_data >>> read1_data[4:0];
+      `ALU_OP_SRA: result = $signed(read0_data) >>> read1_data[4:0];
       `ALU_OP_OR:  result = read0_data | read1_data;
       `ALU_OP_AND: result = read0_data & read1_data;
       // ALU_OP_SETL: result = {31'h0, read0_data <= read1_data};

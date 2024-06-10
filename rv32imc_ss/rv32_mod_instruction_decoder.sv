@@ -53,7 +53,8 @@ module rv32_mod_instruction_decoder (
     assign funct3 = instruction[14:12];
     assign funct7 = instruction[31:25];
     assign alternative_func = funct7[5];
-    assign func = {1'b0, alternative_func, funct3}; // TODO: Remaining bits!
+    assign func[3:0] = {alternative_func, funct3};
+    assign func[4] = opcode[6:2] == `OP_LUI;
 
     /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
