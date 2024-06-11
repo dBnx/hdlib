@@ -91,7 +91,6 @@ module rv32_mod_instruction_decoder_func (
           ram_req[2:0]   = func[2:0];  // Width and signed-ness
         end else if (is_jalr) begin
           rf_write0_enable = 1;
-          alu_op0_use_pc = 0;
           alu_op1_use_imm = 1;
           br_jmp = 1;
           wb_source = `WB_SOURCE_PC;

@@ -84,12 +84,14 @@ module rv32imc_ss_handshake #(
   logic          [ 4:0] alu_func;
   logic          [ 3:0] lsu_req_type;
   logic                 lsu_wr;
+  logic                 lsu_req;
   wb_source_t           wb_source;
   br_condition_t        br_cond;
   logic                 br_is_cond;
   logic                 br_is_jmp;
 
   logic          [ 5:0] id_instruction_format;
+  assign                lsu_req = is_mem_or_io;
 
   // ALU
   logic [31:0] alu_read0_data, alu_read1_data;
@@ -204,8 +206,9 @@ module rv32imc_ss_handshake #(
       .clk  (clk),
       .reset(reset),
 
-      .req_type(lsu_req_type),
+      .req(lsu_req),
       .wr(lsu_wr),
+      .req_type(lsu_req_type),
       .address(lsu_address),
       .data_i(rf_read1_data),
       .data_o(lsu_data_o),

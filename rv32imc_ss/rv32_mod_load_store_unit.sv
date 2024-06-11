@@ -4,6 +4,7 @@ module rv32_mod_load_store_unit #(
     input        reset,
 
     // HART Interface
+    input        req,
     input [ 3:0] req_type, // [S,U]; Reserved; Size
     input        wr,
     input [31:0] address,
@@ -29,7 +30,7 @@ module rv32_mod_load_store_unit #(
 
     assign data_data_o = data_i;
     // assign data_o = data_data_i;
-    assign data_req = req_type != 0;
+    assign data_req = req;
     assign data_wr = wr;
     assign data_addr = {address[31:2], 2'h0};
     assign valid = data_ack;
