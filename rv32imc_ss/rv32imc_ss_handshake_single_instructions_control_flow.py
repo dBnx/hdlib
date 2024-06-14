@@ -49,194 +49,214 @@ async def exec_nop(dut, count: int = 1):
     await exec_instr(dut, instruction=nop, count=count)
 
 @cocotb.test()
-async def test_s_sb(dut) -> None:
+async def test_j_jal(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
-    rf["x5"] = -2
-    rf["x6"] = 0x100
-    set_registerfile(dut, rf)
-
-    instr = 0x005300a3 # SB x5, 1(x6)
-    dut.data_ack.value = 1
-    dut.data_data_i.value = 0x1234
-    await exec_instr(dut, instr)
-
-    assert 1 == dut.data_req.value
-    assert 1 == dut.data_wr.value
-    assert 0b0010 == dut.data_be.value
-    assert 0x100 + 0 == dut.data_addr.value
-    
-    # Simply ackowledge write
-    dut.data_ack.value = 0
-    # assert 0x1234 == get_registerfile(dut)["x5"]
-
-    exec_nop(dut)
-
-# @cocotb.test()
-async def test_s_sh(dut) -> None:
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    await Timer(1, "ps")
-
-    rf = get_registerfile(dut)
-    rf["x5"] = -2
-    rf["x6"] = 0x100
-    set_registerfile(dut, rf)
-
-    instr = 0x00531323 # SH x5, 6(x6)
-    await exec_instr(dut, instr)
-
-    assert 1 == dut.data_req.value
-    assert 1 == dut.data_wr.value
-    assert 0b1100 == dut.data_be.value
-    assert 0x100 + 4 == dut.data_addr.value
-
-    # Check that it's waiting
     initial_pc = get_pc(dut)["current"]
-    for i in range(10):
-        await RisingEdge(dut.clk)
-    await Timer(1, "ps")
+    instr = 0xfd9ff0ef # JAL x1, -40
+    await exec_instr(dut, instr)
 
-    assert initial_pc == get_pc(dut)["current"], "HART pauses during LSU stall"
-
-    dut.data_ack.value = 1
-    dut.data_data_i.value = 0x1234
-    await Timer(1, "ps")
-    await RisingEdge(dut.clk)
-    await Timer(1, "ps")
-    dut.data_ack.value = 0
-
-    # assert 0x1234 == get_registerfile(dut)["x5"]
+    assert (initial_pc - 40) & 0xFFFF_FFFF == get_pc(dut)["current"]
+    assert initial_pc + 4 == get_registerfile(dut)["x1"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_sw(dut) -> None:
+@cocotb.test()
+async def test_i_jalr(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
+
     rf = get_registerfile(dut)
-    rf["x5"] = -2
-    rf["x6"] = 0x100
+    rf["x5"] = 100
     set_registerfile(dut, rf)
 
-    instr = 0x00532223 # SW x5, 4(x6)
+    instr = 0x002280e7 # jalr x1, 2(x5)
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 1 == dut.data_wr.value
-    assert 0xF == dut.data_be.value
-    assert 0x100 + 4 == dut.data_addr.value
+    assert initial_pc + 4 == get_registerfile(dut)["x1"]
+    assert 100 + 2 == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_lb(dut) -> None:
+@cocotb.test()
+async def test_b_beq_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
     rf = get_registerfile(dut)
-    rf["x6"] = 0x100
+    rf["x5"] = 100
+    rf["x6"] = 100
     set_registerfile(dut, rf)
-
-    instr = 0x00130283 # lb x5, 1(x6)
+    instr = 0xfe6288e3 # beq x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 0 == dut.data_wr.value
-    assert 0b0010 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_lh(dut) -> None:
-    # TODO: Copy & Paste
+@cocotb.test()
+async def test_b_beq_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
     rf = get_registerfile(dut)
-    rf["x6"] = 0x100
+    rf["x5"] = 100
+    rf["x6"] = 101
     set_registerfile(dut, rf)
-
-    instr = 0x00231283 # lh x5, 2(x6)
+    instr = 0xfe6288e3 # beq x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 0 == dut.data_wr.value
-    assert 0b0010 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_lw(dut) -> None:
-    # TODO: Copy & Paste
+@cocotb.test()
+async def test_b_blt_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
     rf = get_registerfile(dut)
-    rf["x6"] = 0x100
+    rf["x5"] = -100
+    rf["x6"] = +100
     set_registerfile(dut, rf)
-
-    instr = 0x00432283 # lw x5, 4(x6)
+    instr = 0xfe62c8e3 # blt x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 0 == dut.data_wr.value
-    assert 0b1111 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_lbu(dut) -> None:
-    # TODO: Copy & Paste
+@cocotb.test()
+async def test_b_blt_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
     rf = get_registerfile(dut)
-    rf["x6"] = 0x100
+    rf["x5"] = +100
+    rf["x6"] = -100
     set_registerfile(dut, rf)
-
-    instr = 0x00234283 # lbu x5, 2(x6)
+    instr = 0xfe62c8e3 # blt x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 0 == dut.data_wr.value
-    assert 0b0100 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# @cocotb.test()
-async def test_s_lhu(dut) -> None:
-    # TODO: Copy & Paste
+@cocotb.test()
+async def test_b_bge_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
+    initial_pc = get_pc(dut)["current"]
     rf = get_registerfile(dut)
-    rf["x6"] = 0x100
+    rf["x5"] = -100
+    rf["x6"] = -100
     set_registerfile(dut, rf)
-
-    instr = 0x00435283 # lhu x5, 4(x6)
+    instr = 0xfe62d8e3 # bge x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert 1 == dut.data_req.value
-    assert 0 == dut.data_wr.value
-    assert 0b0010 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
 
     exec_nop(dut)
 
-# TODO: Acknoweldge the stores
-# TODO: Acknoweldge the loads
+@cocotb.test()
+async def test_b_bge_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = +100
+    set_registerfile(dut, rf)
+    instr = 0xfe62d8e3 # bge x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bltu_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = +100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62e8e3 # bltu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bltu_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = +100
+    set_registerfile(dut, rf)
+    instr = 0xfe62e8e3 # bltu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bgeu_true(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = -100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62f8e3 # bgeu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+@cocotb.test()
+async def test_b_bgeu_false(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    initial_pc = get_pc(dut)["current"]
+    rf = get_registerfile(dut)
+    rf["x5"] = +100
+    rf["x6"] = -100
+    set_registerfile(dut, rf)
+    instr = 0xfe62f8e3 # bgeu x5, x6, -16
+    await exec_instr(dut, instr)
+
+    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+
+    exec_nop(dut)
+
+# TODO: Missing "system" instructions 
+# FENCE
+# FENCE.TSO
+# PAUSE
+# ECALL
+# BREAK
 
 def test_runner():
     import os

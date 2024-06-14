@@ -49,7 +49,7 @@ async def exec_nop(dut, count: int = 1):
     await exec_instr(dut, instruction=nop, count=count)
 
 @cocotb.test()
-async def test_u_lui(dut) -> None:
+async def todo(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
@@ -63,18 +63,14 @@ async def test_u_lui(dut) -> None:
 
     exec_nop(dut)
 
-@cocotb.test()
-async def test_u_auipc(dut) -> None:
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    await Timer(1, "ps")
-
-    initial_pc = get_pc(dut)["current"]
-    instr = 0x00001297 # AUIPC x5, 1
-    await exec_instr(dut, instr)
-
-    assert initial_pc + (1 << 12) == get_registerfile(dut)["x5"]
-
-    exec_nop(dut)
+# TODO: Missing "system" instructions 
+# FENCE
+# FENCE.TSO
+# PAUSE
+# ECALL
+# BREAK
+#
+# CSR
 
 def test_runner():
     import os

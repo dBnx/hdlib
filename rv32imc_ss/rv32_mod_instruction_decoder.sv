@@ -58,6 +58,7 @@ module rv32_mod_instruction_decoder (
     assign func[4] = opcode[6:2] == `OP_LUI;
     assign func[5] = opcode[6:2] == `OP_JALR;
 
+    logic promote_priviledge_m;
     /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;
@@ -91,6 +92,7 @@ module rv32_mod_instruction_decoder (
             case(opcode[6:2]) 
                 `OP_OP_IMM  : // I
                     is_i_type = 1;
+                    // FIXME: Use is_i_type = instruction[11:7] != 0;
                 `OP_OP_IMM_32: // I
                     is_i_type = 1;
                 `OP_LUI     : // U
@@ -117,18 +119,20 @@ module rv32_mod_instruction_decoder (
                     is_s_type = 1;
                     is_mem_or_io = 1;
                 end
-                `OP_MISC_MEM: // I
-                    is_i_type = 1;
-                `OP_SYSTEM  : // I
-                    is_i_type = 1;
-                default: begin
-                    is_r_type = 0;
-                    is_i_type = 0;
-                    is_s_type = 0;
-                    is_s_subtype_b = 0;
-                    is_u_type = 0;
-                    is_u_subtype_j = 0;
+                `OP_MISC_MEM: begin  // I
+                    // FENCE FENCE.TSO PAUSE
+                    // is_i_type = 1;
                 end
+                `OP_SYSTEM  : begin
+                    // I
+                    // ECALL (0), EBREAK (1)
+                    is_i_type = 1;
+                    promote_priviledge_m = 1;
+                    // CSRRW CSRRS CSRRC CSRRWI CSRRSI CSRRCI
+                    // Depending on the type rs1 == x0 has different effects.
+                    // is_weird_type = 1;
+                end
+                default: begin end
             endcase
         end
     end
