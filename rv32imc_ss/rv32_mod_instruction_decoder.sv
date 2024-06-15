@@ -87,6 +87,7 @@ module rv32_mod_instruction_decoder (
         is_u_subtype_j = 0;
         is_s_subtype_b = 0;
         is_mem_or_io = 0;
+        promote_priviledge_m = 0;
 
         if( !is_compressed ) begin
             case(opcode[6:2]) 

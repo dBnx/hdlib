@@ -48,7 +48,7 @@ async def exec_nop(dut, count: int = 1):
     nop = 0x00000013 # addi x0, x0, 0
     await exec_instr(dut, instruction=nop, count=count)
 
-@cocotb.test()
+# @cocotb.test()
 async def test_s_sb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -59,6 +59,7 @@ async def test_s_sb(dut) -> None:
     set_registerfile(dut, rf)
 
     instr = 0x005300a3 # SB x5, 1(x6)
+    # Instant ackowledge write
     dut.data_ack.value = 1
     dut.data_data_i.value = 0x1234
     await exec_instr(dut, instr)
@@ -68,13 +69,18 @@ async def test_s_sb(dut) -> None:
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 0 == dut.data_addr.value
     
-    # Simply ackowledge write
     dut.data_ack.value = 0
-    # assert 0x1234 == get_registerfile(dut)["x5"]
+    await Timer(1, "ns")
+    await RisingEdge(dut.clk)
+    await Timer(1, "ns")
+
+    assert 0 == dut.data_req.value
+    assert 0 == dut.data_wr.value
+    assert 0 == dut.data_addr.value
 
     exec_nop(dut)
 
-# @cocotb.test()
+@cocotb.test()
 async def test_s_sh(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -92,22 +98,27 @@ async def test_s_sh(dut) -> None:
     assert 0b1100 == dut.data_be.value
     assert 0x100 + 4 == dut.data_addr.value
 
+
     # Check that it's waiting
     initial_pc = get_pc(dut)["current"]
-    for i in range(10):
+    for i in range(3):
         await RisingEdge(dut.clk)
     await Timer(1, "ps")
 
+    assert 1 == dut.data_req.value
+    assert 1 == dut.data_wr.value
     assert initial_pc == get_pc(dut)["current"], "HART pauses during LSU stall"
 
+    # Finally acknowledge
     dut.data_ack.value = 1
-    dut.data_data_i.value = 0x1234
     await Timer(1, "ps")
     await RisingEdge(dut.clk)
     await Timer(1, "ps")
     dut.data_ack.value = 0
 
-    # assert 0x1234 == get_registerfile(dut)["x5"]
+    assert 0 == dut.data_req.value
+    assert 0 == dut.data_wr.value
+    assert 0 == dut.data_addr.value
 
     exec_nop(dut)
 
@@ -169,6 +180,23 @@ async def test_s_lh(dut) -> None:
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 1 == dut.data_addr.value
     assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+
+    # Check that it's waiting
+    initial_pc = get_pc(dut)["current"]
+    for i in range(10):
+        await RisingEdge(dut.clk)
+    await Timer(1, "ps")
+
+    assert initial_pc == get_pc(dut)["current"], "HART pauses during LSU stall"
+
+    dut.data_ack.value = 1
+    dut.data_data_i.value = 0x1234
+    await Timer(1, "ps")
+    await RisingEdge(dut.clk)
+    await Timer(1, "ps")
+    dut.data_ack.value = 0
+
+    # assert 0x1234 == get_registerfile(dut)["x5"]
 
     exec_nop(dut)
 
