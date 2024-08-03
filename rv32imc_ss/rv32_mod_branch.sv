@@ -1,6 +1,4 @@
-module rv32_mod_branch #(
-    // parameter logic ASYNC_READ = 1
-) (
+module rv32_mod_branch (
     input  [31:0] rf_read0,
     input  [31:0] rf_read1,
     input  [ 2:0] cond,

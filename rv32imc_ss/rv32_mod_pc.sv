@@ -15,7 +15,7 @@ module rv32_mod_pc #(
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             pc_current <= INITIAL_GP;
-        end if(!stall) begin
+        end else if(!stall) begin
             if(pc_overwrite_enable) begin
                 pc_current <= pc_overwrite_data;
             end else begin

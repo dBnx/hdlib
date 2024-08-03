@@ -1,6 +1,4 @@
-module rv32_mod_instruction_fetch #(
-    // parameter logic [31:0] INITIAL_GP = 32'h10000000
-) (
+module rv32_mod_instruction_fetch (
     input clk,
     input reset,
 

@@ -1,5 +1,4 @@
-module rv32_mod_load_store_unit #(
-) (
+module rv32_mod_load_store_unit (
     input        clk,
     input        reset,
 

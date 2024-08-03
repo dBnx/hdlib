@@ -1,7 +1,5 @@
 
-module rv32_mod_alu #(
-    // parameter logic ASYNC_READ = 1
-) (
+module rv32_mod_alu (
     // For complex instructions
     // input         clk,
     // output        stall

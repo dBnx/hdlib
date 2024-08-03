@@ -1,4 +1,4 @@
-module rv32_mod_registerfile #(
+module rv32_mod_csrs #(
     parameter logic ASYNC_READ = 1
 ) (
     input         clk,
