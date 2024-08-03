@@ -4,12 +4,39 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 
+IFORMAT: dict[str, int] = {
+    "R": 0b100000,
+    "I": 0b010000,
+    "S": 0b001000,
+    "B": 0b001100,
+    "U": 0b000010,
+    "J": 0b000011,
+}
 
-@cocotb.test()
+# module rv32_mod_instruction_decoder_func (
+#     input [5:0] instruction_format,  // or opcode?
+#     input [5:0] func,
+#     input [0:0] is_mem_or_io,
+# 
+#     output logic             rf_write0_enable,
+#     output logic             alu_op0_use_pc,
+#     output logic             alu_op1_use_imm,
+#     output logic       [4:0] alu_func,
+#     output logic       [3:0] ram_req,
+#     output logic             ram_wr,
+#     output wb_source_t       wb_source,
+# 
+#     output br_condition_t br_cond,
+#     output logic          br_is_cond,
+#     output logic          br_jmp
+# );
+
+# @cocotb.test()
 async def test_foo(dut) -> None:
-    clk_time_ns = int(10)
-    cocotb.start_soon(Clock(dut.clk, clk_time_ns, units="ns").start())
+
+    dut.instruction_format.value = IFORMAT["R"]
     await Timer(1, "ps")
+
 
     # await reset_dut(dut)
 

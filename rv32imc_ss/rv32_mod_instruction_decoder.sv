@@ -26,7 +26,7 @@ module rv32_mod_instruction_decoder (
     bit [6:0] opcode;
     assign opcode = instruction[6:0];
     assign is_compressed = opcode[1:0] != 2'b11;
-    
+
     // Registers
     bit is_r_type;
     bit is_i_type;
@@ -90,7 +90,7 @@ module rv32_mod_instruction_decoder (
         promote_priviledge_m = 0;
 
         if( !is_compressed ) begin
-            case(opcode[6:2]) 
+            case(opcode[6:2])
                 `OP_OP_IMM  : // I
                     is_i_type = 1;
                     // FIXME: Use is_i_type = instruction[11:7] != 0;

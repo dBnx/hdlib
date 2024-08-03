@@ -15,6 +15,7 @@ typedef enum bit [1:0] {
 } wb_source_t;
 */
 
+// `define ALU_OP_ADD 4'b0000
 `define ALU_OP_ADD 4'b0_000
 
 typedef bit [1:0] wb_source_t;
@@ -86,9 +87,9 @@ module rv32_mod_instruction_decoder_func (
         rf_write0_enable = 1;
         alu_op1_use_imm  = 1;
         if (is_mem_or_io) begin
-          wb_source      = `WB_SOURCE_LSU;
+          wb_source    = `WB_SOURCE_LSU;
           // alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
-          ram_req[2:0]   = func[2:0];  // Width and signed-ness
+          ram_req[2:0] = func[2:0];  // Width and signed-ness
         end else if (is_jalr) begin
           rf_write0_enable = 1;
           alu_op1_use_imm = 1;
@@ -112,8 +113,8 @@ module rv32_mod_instruction_decoder_func (
       end
       6'b000010: begin  // U Type - LUI AUIPC
         rf_write0_enable = 1;
-        alu_op0_use_pc = !func[4]; // Use x0 for LUI
-        alu_op1_use_imm = 1;
+        alu_op0_use_pc   = !func[4];  // Use x0 for LUI
+        alu_op1_use_imm  = 1;
         // TODO: Clear lower 12bit (?) -> Extra ALU Flag?
       end
       6'b000011: begin  // J Type - Unconditional

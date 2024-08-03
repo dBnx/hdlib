@@ -10,34 +10,33 @@ from numpy import uint32, int32
 ASM = {
     "R": {
         "ADD x3, x1, x2": (0x002081b3, 0)
-        #
     },
     "I": {
         "ADDI x0, x0,  0": (0x00000013,  0),
         "ADDI x4, x4,  1": (0x00120213,  1),
-        "ADDI x4, x4, -1": (0xfff20213, -1),
+        "ADDI x4, x4, -1": (0xfff2_0213, -1),
     },
     "S": {
-        "SW x4, 1(x0)": (0x004020a3, 1),
+        "SW x4, 1(x0)": (0x0040_20a3, 1),
     },
     "B": {
-        "BLTU x5, x6,  0": (0x0062e063,  0),
-        "BLTU x5, x6, 10": (0x0062e563, 10),
+        "BLTU x5, x6,  0": (0x0062_e063,  0),
+        "BLTU x5, x6, 10": (0x0062_e563, 10),
     },
     "U": {
-        "LUI x5, 10":   (0x0000a2b7, 10 << 12),
-        "AUIPC x5, 10": (0x0000a297, 10 << 12),
+        "LUI x5, 10":   (0x0000_A2B7, 10 << 12),
+        "AUIPC x5, 10": (0x0000_A297, 10 << 12),
     },
     "J": {
-        "JAL x0,  2": (0x0020006f, 0x0000_0002),
-        "JAL x0,  4": (0x0040006f, 0x0000_0004),
-        "JAL x0, -2": (0xfffff06f, 0xFFFF_FFFE),
-        "JAL x0, -4": (0xffdff06f, 0xFFFF_FFFC),
+        "JAL x0,  2": (0x0020_006F, 2),
+        "JAL x0,  4": (0x0040_006F, 4),
+        "JAL x0, -2": (0xFFFF_F06F, -2),
+        "JAL x0, -4": (0xFFDF_F06F, -4),
     },
 }
 
 # {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
-IFORMAT: dict[str,int] = {
+IFORMAT: dict[str, int] = {
     "R": 0b100000,
     "I": 0b010000,
     "S": 0b001000,
@@ -46,61 +45,58 @@ IFORMAT: dict[str,int] = {
     "J": 0b000011,
 }
 
+
 @cocotb.test()
-async def test_null(dut) -> None:
+async def test_inactive_null(dut) -> None:
     dut.instruction.value = 0
     dut.instruction_format.value = 0
     await Timer(1, "ps")
     assert dut.immediate.value == 0, "No input should stay 0 to reduce transitions"
 
-@cocotb.test()
-async def test_type_r(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["R"].items(): 
+async def check(dut, format_type: str) -> None:
+    for instr_asm, (instr_bin, ref_imm) in ASM[format_type].items():
         dut.instruction.value = instr_bin
-        dut.instruction_format.value = IFORMAT["R"]
+        dut.instruction_format.value = IFORMAT[format_type]
         await Timer(1, "ps")
         # assert np.array(int(dut.immediate.value)).astype(int32) == int32(ref_imm), f"{instr_asm}"
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+        assert dut.immediate.value.integer == uint32(
+            int32(ref_imm)), f"{instr_asm}. Expect {ref_imm}"
+
+@cocotb.test()
+async def test_type_r(dut) -> None:
+    await check(dut, "R")
+
 
 @cocotb.test()
 async def test_type_i(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["I"].items(): 
-        dut.instruction.value = instr_bin
-        dut.instruction_format.value = IFORMAT["I"]
-        await Timer(1, "ps")
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+    await check(dut, "I")
+
 
 @cocotb.test()
 async def test_type_s(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["S"].items(): 
-        dut.instruction.value = instr_bin
-        dut.instruction_format.value = IFORMAT["S"]
-        await Timer(1, "ps")
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+    await check(dut, "S")
+
 
 @cocotb.test()
 async def test_type_b(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["B"].items(): 
-        dut.instruction.value = instr_bin
-        dut.instruction_format.value = IFORMAT["B"]
-        await Timer(1, "ps")
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+    await check(dut, "B")
+
 
 @cocotb.test()
 async def test_type_u(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["U"].items(): 
-        dut.instruction.value = instr_bin
-        dut.instruction_format.value = IFORMAT["U"]
-        await Timer(1, "ps")
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+    await check(dut, "U")
+
 
 @cocotb.test()
 async def test_type_j(dut) -> None:
-    for instr_asm, (instr_bin, ref_imm) in ASM["J"].items(): 
+    # await check(dut, "U")
+    for instr_asm, (instr_bin, ref_imm) in ASM["J"].items():
         dut.instruction.value = instr_bin
         dut.instruction_format.value = IFORMAT["J"]
         await Timer(1, "ps")
-        assert int32(int(dut.immediate.value)) == int32(ref_imm), f"{instr_asm}"
+        assert dut.immediate.value.integer == uint32(
+            int32(ref_imm)), f"{instr_asm}. Expect {ref_imm}"
+
 
 def test_runner():
     import os
