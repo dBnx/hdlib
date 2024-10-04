@@ -1,0 +1,105 @@
+[*]
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Wed Oct  2 08:41:03 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32_mod_csrs/dump.vcd"
+[dumpfile_mtime] "Wed Oct  2 08:40:18 2024"
+[dumpfile_size] 6040
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32_mod_csrs.gtkwave"
+[timestart] 0
+[size] 1920 1001
+[pos] -27 -24
+*-14.000000 45130 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 350
+[sst_expanded] 1
+[sst_vpaned_height] 296
+@22
+[color] 3
+rv32_mod_csrs.INITIAL_MSTATUS[31:0]
+[color] 3
+rv32_mod_csrs.INITIAL_MTVEC[31:0]
+[color] 3
+rv32_mod_csrs.MARCH_ID[31:0]
+[color] 3
+rv32_mod_csrs.MHART_ID[31:0]
+[color] 3
+rv32_mod_csrs.MIMP_ID[31:0]
+[color] 3
+rv32_mod_csrs.MVENDOR_ID[31:0]
+@200
+-SYSCON
+@28
+[color] 1
+rv32_mod_csrs.priviledge[1:0]
+[color] 1
+rst
+[color] 1
+rv32_mod_csrs.clk
+@200
+-RegFile I/O
+@28
+[color] 2
+wr
+[color] 2
+rd
+[color] 2
+rv32_mod_csrs.error
+@22
+[color] 2
+addr[11:0]
+[color] 2
+rv32_mod_csrs.data_i[31:0]
+[color] 2
+rv32_mod_csrs.data_o[31:0]
+@200
+-Trap I/O
+@22
+rv32_mod_csrs.interrupts[5:0]
+rv32_mod_csrs.faulting_address[31:0]
+rv32_mod_csrs.faulting_instruction[31:0]
+rv32_mod_csrs.current_pc[31:0]
+@28
+serve_trap
+@200
+-Internal
+@22
+rv32_mod_csrs.csr_mcycle[63:0]
+rv32_mod_csrs.csr_mtime[63:0]
+rv32_mod_csrs.csr_mscratch[31:0]
+rv32_mod_csrs.csr_mstatus[31:0]
+rv32_mod_csrs.csr_mie[31:0]
+rv32_mod_csrs.csr_mepc[31:0]
+rv32_mod_csrs.csr_mcause[31:0]
+rv32_mod_csrs.csr_mtval[31:0]
+rv32_mod_csrs.csr_mtvec[31:0]
+rv32_mod_csrs.csr_mip[31:0]
+@200
+-Direct Access CSRs
+@23
+rv32_mod_csrs.mepc[31:0]
+@22
+rv32_mod_csrs.mip[31:0]
+rv32_mod_csrs.mie[31:0]
+rv32_mod_csrs.mstatus[31:0]
+rv32_mod_csrs.mtval[31:0]
+rv32_mod_csrs.mtvec[31:0]
+@200
+-Exception IN
+@28
+rv32_mod_csrs.exception_breakpoint
+rv32_mod_csrs.exception_ecall_from_m_mode
+rv32_mod_csrs.exception_ecall_from_s_mode
+rv32_mod_csrs.exception_ecall_from_u_mode
+rv32_mod_csrs.exception_illegal_instruction
+rv32_mod_csrs.exception_instr_access_fault
+rv32_mod_csrs.exception_instr_addr_misaligned
+rv32_mod_csrs.exception_instr_page_fault
+rv32_mod_csrs.exception_load_access_fault
+rv32_mod_csrs.exception_load_addr_misaligned
+rv32_mod_csrs.exception_load_page_fault
+rv32_mod_csrs.exception_store_access_fault
+rv32_mod_csrs.exception_store_page_fault
+rv32_mod_csrs.exception_store_addr_misaligned
+[pattern_trace] 1
+[pattern_trace] 0
