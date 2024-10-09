@@ -35,6 +35,26 @@ async def reset_dut(dut):
 #         - Check that PC doesn't increase
 #         - Also set if_valid to true to check lsu_stalling instead of if_stalling
 
+async def ack_after(dut, n_cycles: int = 1):
+    """Sets data_ack after `n_cycles` cycles for one cycle, resets.and
+    awaits the LSU cycle."""
+    await RisingEdge(dut.clk) 
+    for _ in range(3):
+        await RisingEdge(dut.clk) 
+        assert 0 == dut.data_req.value
+
+    await Timer(1, "ns")
+    dut.data_ack.value = 1
+
+    await RisingEdge(dut.clk)
+    await Timer(1, "ns")
+
+    dut.data_ack.value = 0
+
+    await Timer(1, "ns")
+    await RisingEdge(dut.clk)
+    await Timer(1, "ns")
+
 @cocotb.test()
 async def test_s_sb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
@@ -49,27 +69,36 @@ async def test_s_sb(dut) -> None:
 
     instr = 0x005300a3 # SB x5, 1(x6)
     # Instant ackowledge write
-    dut.data_ack.value = 1
     dut.data_data_i.value = 0x1234
     await rv32imc.exec_instr(dut, instr)
+    await Timer(1, "ns")
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 0 == dut.data_addr.value
-    
-    dut.data_ack.value = 0
-    await Timer(1, "ns")
-    await RisingEdge(dut.clk)
-    await Timer(1, "ns")
 
-    # assert 0 == dut.data_req.value
+    await ack_after(dut, 4)
+    # await RisingEdge(dut.clk)
+    # await Timer(1, "ns")
+    # dut.data_ack.value = 1
+    
+    # await RisingEdge(dut.clk)
+    # await Timer(1, "ns")
+
+    # dut.data_ack.value = 0
+
+    # await Timer(1, "ns")
+    # await RisingEdge(dut.clk)
+    # await Timer(1, "ns")
+
+    assert 0 == dut.data_req.value
     assert 0 == dut.data_wr.value
     assert 0 == dut.data_addr.value
 
     await rv32imc.exec_nop(dut)
 
-# @cocotb.test()
+@cocotb.test()
 async def test_s_sh(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -87,26 +116,22 @@ async def test_s_sh(dut) -> None:
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
     assert 0b1100 == dut.data_be.value
-    assert 0x100 + 4 == dut.data_addr.value
-
+    assert 0x100 + 4 == dut.data_addr.value # FIXME: Check address offset and bitmask
 
     # Check that it's waiting
     initial_pc = rv32imc.get_pc(dut)["current"]
-    for i in range(3):
-        await RisingEdge(dut.clk)
-    await Timer(1, "ps")
 
-    assert 1 == dut.data_req.value
-    assert 1 == dut.data_wr.value
+    await ack_after(dut, 2)
+
     assert initial_pc == rv32imc.get_pc(dut)["current"], "HART pauses during LSU stall"
 
     # Finally acknowledge
-    dut.data_ack.value = 1
-    await Timer(1, "ps")
-    await RisingEdge(dut.clk)
-    await Timer(1, "ps")
-    dut.data_ack.value = 0
-    await Timer(1, "ps")
+    # dut.data_ack.value = 1
+    # await Timer(1, "ps")
+    # await RisingEdge(dut.clk)
+    # await Timer(1, "ps")
+    # dut.data_ack.value = 0
+    # await Timer(1, "ps")
 
     assert 0 == dut.data_req.value
     assert 0 == dut.data_wr.value
@@ -129,12 +154,20 @@ async def test_s_sw(dut) -> None:
 
     instr = 0x00532223 # SW x5, 4(x6)
     await rv32imc.exec_instr(dut, instr)
+    await Timer(1, "ns")
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
     assert 0xF == dut.data_be.value
     assert 0x100 + 4 == dut.data_addr.value
-    # TODO: Check ack, 
+
+    # Stall for multiple cycles
+    await ack_after(dut, 4)
+
+
+    assert 0 == dut.data_req.value
+    assert 0 == dut.data_wr.value
+    assert 0 == dut.data_addr.value
 
     await rv32imc.exec_nop(dut)
 

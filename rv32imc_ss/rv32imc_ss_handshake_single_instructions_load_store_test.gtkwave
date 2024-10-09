@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Wed Oct  9 09:39:33 2024
+[*] Wed Oct  9 10:54:06 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Wed Oct  9 08:37:46 2024"
-[dumpfile_size] 21231
+[dumpfile_mtime] "Wed Oct  9 10:53:53 2024"
+[dumpfile_size] 28477
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_single_instructions_load_store_test.gtkwave"
 [timestart] 0
 [size] 1920 1001
-[pos] 155 137
-*-14.000000 30000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 103 91
+*-15.000000 47020 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
 [signals_width] 316

@@ -141,7 +141,7 @@ module rv32_mod_load_store_unit (
       req_size <= 0;
     end else if (req) begin
       // Hold?
-      dext_req  <= req;
+      dext_req  <= 1; // Reset after 1 clock
       dext_wr   <= wr;
       dext_addr <= {address[31:2], 2'h0};
       dext_be   <= dext_be_comb;
@@ -156,6 +156,8 @@ module rv32_mod_load_store_unit (
         req_signed <= req_type[3];
         req_size <= req_type[1:0];
       end
+    end else begin
+      dext_req  <= 0; // Reset after 1 clock
     end
 
     // HART Stall
@@ -186,12 +188,5 @@ module rv32_mod_load_store_unit (
     end
   end
 
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars(0, rv32_mod_load_store_unit);
-    // #1;
-  end
-`endif
 endmodule
 
