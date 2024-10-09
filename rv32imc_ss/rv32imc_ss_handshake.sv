@@ -6,7 +6,7 @@
 // `include "rv32imc_ss/rv32_mod_alu.sv"
 
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC  1
+`define WB_SOURCE_PC 1
 `define WB_SOURCE_LSU 2
 
 
@@ -21,6 +21,7 @@
 module rv32imc_ss_handshake #(
     parameter logic [31:0] INITIAL_GP = 32'h10000000,
     parameter logic [31:0] INITIAL_SP = 32'h7ffffff0
+    // parameter logic [31:0] INITIAL_MTVEC = INITIAL_GP & 1, // 32'h10000000,
 ) (
     input clk,
     input reset,
@@ -64,7 +65,7 @@ module rv32imc_ss_handshake #(
     case (wb_source)
       // TODO: Move encoding inside instr decode (?)
       `WB_SOURCE_ALU: rf_write0_data = alu_result;
-      `WB_SOURCE_PC:  rf_write0_data = pc_next; // To register must be next
+      `WB_SOURCE_PC: rf_write0_data = pc_next;  // To register must be next
       `WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
       default: rf_write0_data = 0;
     endcase
@@ -91,7 +92,7 @@ module rv32imc_ss_handshake #(
   logic                 br_is_jmp;
 
   logic          [ 5:0] id_instruction_format;
-  assign                lsu_req = is_mem_or_io;
+  assign lsu_req = is_mem_or_io;
 
   // ALU
   logic [31:0] alu_read0_data, alu_read1_data;
@@ -105,7 +106,7 @@ module rv32imc_ss_handshake #(
   // Load store unit
   logic [31:0] lsu_address;
   logic [31:0] lsu_data_o;
-  logic        lsu_valid;
+  logic        lsu_valid, lsu_error; // TODO: lsu_error not connected
   logic        lsu_stall;
   assign lsu_address = alu_result;
 
@@ -213,16 +214,17 @@ module rv32imc_ss_handshake #(
       .data_i(rf_read1_data),
       .data_o(lsu_data_o),
       .valid(lsu_valid),
+      .error(lsu_error),
       .stall(lsu_stall),
 
-      .data_req(data_req),
-      .data_be(data_be),
-      .data_wr(data_wr),
-      .data_ack(data_ack),
-      .data_err(data_err),
-      .data_addr(data_addr),
-      .data_data_o(data_data_o),
-      .data_data_i(data_data_i)
+      .dext_req (data_req),
+      .dext_be  (data_be),
+      .dext_wr  (data_wr),
+      .dext_ack (data_ack),
+      .dext_err (data_err),
+      .dext_addr(data_addr),
+      .dext_do  (data_data_o),
+      .dext_di  (data_data_i)
   );
 
 endmodule

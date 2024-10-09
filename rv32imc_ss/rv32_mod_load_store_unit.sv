@@ -1,5 +1,6 @@
 /*verilator tracing_on*/
-`timescale 1ps / 1ps
+`timescale 1ns / 1ps
+
 
 // Every active req issues a new request.
 // Requests can be issued unless stall is raised.

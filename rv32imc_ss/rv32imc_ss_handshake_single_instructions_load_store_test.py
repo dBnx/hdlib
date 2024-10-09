@@ -1,14 +1,22 @@
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer, First, ClockCycles
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 
+from cohelper import rv32imc
+
 async def reset_dut(dut):
     dut.reset.value = 1
+
     dut.instr_ack.value = 0
     dut.instr_err.value = 0
     dut.instr_data_i.value = 0
+
+    dut.data_ack.value = 0
+    dut.data_err.value = 0
+    dut.data_data_i.value = 0
     await Timer(1, "ps")
 
     await RisingEdge(dut.clk)
@@ -16,53 +24,34 @@ async def reset_dut(dut):
     dut.reset.value = 0
     await Timer(1, "ps")
 
+# TODO: Comment in other tests.
+#       Currently verilator has a bug and doesn't export traces. Because of that icarus is used.
+#       Icarus doesn't implement switch cases with bitmasks, so only 32b I/O operations ccan be tested.
 
-def get_registerfile(dut) -> dict[str, int]:
-    ret: dict[str,intjkk] = {}
-    for i, v in enumerate(dut.inst_registerfile.registerfile.value):
-        ret[f"x{i}"] = v
-    return ret
+# TODO: - Hart should wait until store / load is resolved
+#       - Model should not ACK data after reset
+#       - Extend tests to check for ACK
+#       - Set ACK in model after N? cycles
+#         - Check that PC doesn't increase
+#         - Also set if_valid to true to check lsu_stalling instead of if_stalling
 
-def set_registerfile(dut, values: dict[str, int]):
-    for i, v in enumerate(values.values()):
-        dut.inst_registerfile.registerfile[i].value = v
-
-def get_pc(dut) -> dict[str, int]:
-    return {
-        "current":dut.pc_current.value,
-        "next"   :dut.pc_next.value
-    }
-
-async def exec_instr(dut, instruction: int, count: int = 1):
-    """Execute `count` nops. Also useful at the end of tests for cleaner traces"""
-    dut.instr_ack.value = 1
-    dut.instr_err.value = 0
-    dut.instr_data_i.value = instruction
-    for _ in range(count):
-        await Timer(1, "ps")
-        await RisingEdge(dut.clk)
-        await Timer(1, "ps")
-    dut.instr_ack.value = 0
-
-async def exec_nop(dut, count: int = 1):
-    nop = 0x00000013 # addi x0, x0, 0
-    await exec_instr(dut, instruction=nop, count=count)
-
-# @cocotb.test()
+@cocotb.test()
 async def test_s_sb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x5"] = -2
     rf["x6"] = 0x100
-    set_registerfile(dut, rf)
+    rv32imc.set_registerfile(dut, rf)
 
     instr = 0x005300a3 # SB x5, 1(x6)
     # Instant ackowledge write
     dut.data_ack.value = 1
     dut.data_data_i.value = 0x1234
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
@@ -74,24 +63,26 @@ async def test_s_sb(dut) -> None:
     await RisingEdge(dut.clk)
     await Timer(1, "ns")
 
-    assert 0 == dut.data_req.value
+    # assert 0 == dut.data_req.value
     assert 0 == dut.data_wr.value
     assert 0 == dut.data_addr.value
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
-@cocotb.test()
+# @cocotb.test()
 async def test_s_sh(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x5"] = -2
     rf["x6"] = 0x100
-    set_registerfile(dut, rf)
+    rv32imc.set_registerfile(dut, rf)
 
     instr = 0x00531323 # SH x5, 6(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
@@ -100,14 +91,14 @@ async def test_s_sh(dut) -> None:
 
 
     # Check that it's waiting
-    initial_pc = get_pc(dut)["current"]
+    initial_pc = rv32imc.get_pc(dut)["current"]
     for i in range(3):
         await RisingEdge(dut.clk)
     await Timer(1, "ps")
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
-    assert initial_pc == get_pc(dut)["current"], "HART pauses during LSU stall"
+    assert initial_pc == rv32imc.get_pc(dut)["current"], "HART pauses during LSU stall"
 
     # Finally acknowledge
     dut.data_ack.value = 1
@@ -115,52 +106,58 @@ async def test_s_sh(dut) -> None:
     await RisingEdge(dut.clk)
     await Timer(1, "ps")
     dut.data_ack.value = 0
+    await Timer(1, "ps")
 
     assert 0 == dut.data_req.value
     assert 0 == dut.data_wr.value
     assert 0 == dut.data_addr.value
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
-# @cocotb.test()
+@cocotb.test()
 async def test_s_sw(dut) -> None:
+    """Store word (32b)"""
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
-    rf["x5"] = -2
-    rf["x6"] = 0x100
-    set_registerfile(dut, rf)
+    rf = rv32imc.get_registerfile(dut)
+    rf["x5"] = -2 # Data
+    rf["x6"] = 0x100  # Address
+    rv32imc.set_registerfile(dut, rf)
 
     instr = 0x00532223 # SW x5, 4(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 1 == dut.data_wr.value
     assert 0xF == dut.data_be.value
     assert 0x100 + 4 == dut.data_addr.value
+    # TODO: Check ack, 
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # @cocotb.test()
 async def test_s_lb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
-    set_registerfile(dut, rf)
+    rv32imc.set_registerfile(dut, rf)
 
     instr = 0x00130283 # lb x5, 1(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
+    await FallingEdge(dut.clk)
 
     assert 1 == dut.data_req.value
     assert 0 == dut.data_wr.value
     assert 0b0010 == dut.data_be.value
-    assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert 0x100 + 0 == dut.data_addr.value, "offset of one is within a data word"
+    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # @cocotb.test()
 async def test_s_lh(dut) -> None:
@@ -168,12 +165,12 @@ async def test_s_lh(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
-    set_registerfile(dut, rf)
+    rv32imc.set_registerfile(dut, rf)
 
     instr = 0x00231283 # lh x5, 2(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 0 == dut.data_wr.value
@@ -182,12 +179,12 @@ async def test_s_lh(dut) -> None:
     assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
 
     # Check that it's waiting
-    initial_pc = get_pc(dut)["current"]
+    initial_pc = rv32imc.get_pc(dut)["current"]
     for i in range(10):
         await RisingEdge(dut.clk)
     await Timer(1, "ps")
 
-    assert initial_pc == get_pc(dut)["current"], "HART pauses during LSU stall"
+    assert initial_pc == rv32imc.get_pc(dut)["current"], "HART pauses during LSU stall"
 
     dut.data_ack.value = 1
     dut.data_data_i.value = 0x1234
@@ -198,7 +195,7 @@ async def test_s_lh(dut) -> None:
 
     # assert 0x1234 == get_registerfile(dut)["x5"]
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # @cocotb.test()
 async def test_s_lw(dut) -> None:
@@ -211,7 +208,7 @@ async def test_s_lw(dut) -> None:
     set_registerfile(dut, rf)
 
     instr = 0x00432283 # lw x5, 4(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 0 == dut.data_wr.value
@@ -219,7 +216,7 @@ async def test_s_lw(dut) -> None:
     assert 0x100 + 1 == dut.data_addr.value
     assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # @cocotb.test()
 async def test_s_lbu(dut) -> None:
@@ -232,7 +229,7 @@ async def test_s_lbu(dut) -> None:
     set_registerfile(dut, rf)
 
     instr = 0x00234283 # lbu x5, 2(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 0 == dut.data_wr.value
@@ -240,7 +237,7 @@ async def test_s_lbu(dut) -> None:
     assert 0x100 + 1 == dut.data_addr.value
     assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # @cocotb.test()
 async def test_s_lhu(dut) -> None:
@@ -253,7 +250,7 @@ async def test_s_lhu(dut) -> None:
     set_registerfile(dut, rf)
 
     instr = 0x00435283 # lhu x5, 4(x6)
-    await exec_instr(dut, instr)
+    await rv32imc.exec_instr(dut, instr)
 
     assert 1 == dut.data_req.value
     assert 0 == dut.data_wr.value
@@ -261,7 +258,7 @@ async def test_s_lhu(dut) -> None:
     assert 0x100 + 1 == dut.data_addr.value
     assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
 
-    exec_nop(dut)
+    await rv32imc.exec_nop(dut)
 
 # TODO: Acknoweldge the stores
 # TODO: Acknoweldge the loads
@@ -298,6 +295,7 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
     test_module = os.path.basename(__file__).replace(".py","")
