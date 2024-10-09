@@ -23,29 +23,31 @@ module rv32imc_ss_handshake #(
     parameter logic [31:0] INITIAL_SP = 32'h7ffffff0
     // parameter logic [31:0] INITIAL_MTVEC = INITIAL_GP & 1, // 32'h10000000,
 ) (
-    input clk,
-    input reset,
+    input logic clk,
+    input logic reset,
 
-    output        instr_req,
-    input         instr_ack,
-    input         instr_err,
-    output [31:0] instr_addr,
-    input  [31:0] instr_data_i,
+    output logic        if_instr_req,
+    input  logic        instr_ack,
+    input  logic        instr_err,
+    output logic [31:0] instr_addr,
+    input  logic [31:0] instr_data_i,
 
-    output        data_req,
-    output        data_wr,
-    input         data_ack,
-    input         data_err,
-    output [ 3:0] data_be,
-    output [31:0] data_addr,
-    output [31:0] data_data_o,
-    input  [31:0] data_data_i
+    output logic        data_req,
+    output logic        data_wr,
+    input  logic        data_ack,
+    input  logic        data_err,
+    output logic [ 3:0] data_be,
+    output logic [31:0] data_addr,
+    output logic [31:0] data_data_o,
+    input  logic [31:0] data_data_i
 );
 
   // Instruction Fetcher
   // logic [31:0] if_address;
   logic [31:0] if_instruction;
   logic        if_valid;
+  logic        instr_req;
+  assign instr_req = if_instr_req && !rf_stalled_passthrough;
   // assign if_address = pc_current;
 
   // Program Counter ( global pointer )
@@ -73,8 +75,8 @@ module rv32imc_ss_handshake #(
   end
 
   // Instruction Decoder
-  logic rf_write0_enable;
-  logic [4:0] rf_read0_index, rf_read1_index, rf_write0_index;
+  logic                 id_write0_enable;
+  logic          [ 4:0] rf_read0_index, rf_read1_index, id_write0_index;
   logic          [31:0] immediate;
   logic          [ 5:0] func;
   logic                 is_mem_or_io;
@@ -86,10 +88,13 @@ module rv32imc_ss_handshake #(
   logic          [ 3:0] lsu_req_type;
   logic                 lsu_wr;
   logic                 lsu_req;
-  wb_source_t           wb_source;
+  wb_source_t           id_wb_source;
   br_condition_t        br_cond;
   logic                 br_is_cond;
   logic                 br_is_jmp;
+
+  // logic                 is_nop;
+  // assign                is_nop = 0; // TODO
 
   logic          [ 5:0] id_instruction_format;
   assign lsu_req = is_mem_or_io;
@@ -99,6 +104,13 @@ module rv32imc_ss_handshake #(
   logic [31:0] alu_result;
   assign alu_read0_data = alu_op0_use_pc ? pc_current : rf_read0_data;
   assign alu_read1_data = alu_op1_use_imm ? immediate : rf_read1_data;
+
+  // Registerfile
+  logic rf_write0_enable;
+  logic [4:0] rf_write0_index;
+  assign rf_write0_enable = rf_stalled_passthrough ? rf_write0_enable_stalled 
+                          : (id_write0_enable && if_valid);
+  assign rf_write0_index = rf_stalled_passthrough ? rf_write0_index_stalled : id_write0_index;
 
   // Branching module
   logic        branch_taken;
@@ -110,6 +122,37 @@ module rv32imc_ss_handshake #(
   logic        lsu_stall;
   assign lsu_address = alu_result;
 
+  // - Resolve stalled write
+  // - TODO: ID must hold values until stall is resolved
+  // - TODO: Replace *_stalled variants with a stall_lsu and stall_* variants.
+  logic       rf_stalled, rf_stalled_p1, rf_stalled_passthrough;
+  logic       rf_write0_enable_stalled;
+  logic [4:0] rf_write0_index_stalled;
+  assign rf_stalled_passthrough = is_mem_or_io || (rf_stalled_p1 || rf_stalled); // FIXME: Same as lsu_valid
+
+  logic save_stalled;
+  assign save_stalled = is_mem_or_io && !rf_stalled;
+
+  wb_source_t           wb_source;
+  assign wb_source = rf_stalled_passthrough ? `WB_SOURCE_LSU : id_wb_source;
+
+  always_ff @(posedge clk or posedge reset) begin
+    if(reset) begin
+        rf_stalled <= 0;
+        rf_write0_enable_stalled <= 0;
+        rf_write0_index_stalled <= 0;
+    end else if (lsu_valid) begin
+        rf_stalled <= 0;
+        rf_write0_enable_stalled <= 0;
+        rf_write0_index_stalled <= 0;
+    end else if(save_stalled) begin
+        rf_stalled <= 1;
+        rf_write0_enable_stalled <= id_write0_enable;
+        rf_write0_index_stalled <= id_write0_index;
+    end
+
+    rf_stalled_p1 <= rf_stalled;
+  end
 
   rv32_mod_instruction_fetch inst_if (
       .clk  (clk),
@@ -120,7 +163,7 @@ module rv32imc_ss_handshake #(
       .if_instruction(if_instruction),
       .if_valid(if_valid),
 
-      .instr_req(instr_req),
+      .instr_req(if_instr_req),
       .instr_ack(instr_ack),
       .instr_err(instr_err),
       .instr_addr(instr_addr),
@@ -145,7 +188,7 @@ module rv32imc_ss_handshake #(
 
       .rf_read0_index(rf_read0_index),
       .rf_read1_index(rf_read1_index),
-      .rf_write0_index(rf_write0_index),
+      .rf_write0_index(id_write0_index),
       .instruction_format(id_instruction_format),
       .func(func),
       .is_mem_or_io(is_mem_or_io),
@@ -157,13 +200,13 @@ module rv32imc_ss_handshake #(
       .func(func),
       .is_mem_or_io(is_mem_or_io),
 
-      .rf_write0_enable(rf_write0_enable),
+      .rf_write0_enable(id_write0_enable),
       .alu_op0_use_pc(alu_op0_use_pc),
       .alu_op1_use_imm(alu_op1_use_imm),
       .alu_func(alu_func),
       .ram_req(lsu_req_type),
       .ram_wr(lsu_wr),
-      .wb_source(wb_source),
+      .wb_source(id_wb_source),
       .br_cond(br_cond),
       .br_is_cond(br_is_cond),
       .br_jmp(br_is_jmp)

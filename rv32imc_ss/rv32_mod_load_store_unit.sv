@@ -45,8 +45,8 @@ module rv32_mod_load_store_unit (
     if (reset) begin
       req_active <= 0;
     end else begin
-      // If there is an active rq, that is terminated and no new rq
-      if (req_active && (dext_ack || dext_err) && !req) begin
+      // If there is an active rq, that is terminated and no new rq -> New req is handled only in the next cycle 
+      if (req_active && (dext_ack || dext_err)) begin
         req_active <= 0;
       end else if (req) begin
         req_active <= 1;

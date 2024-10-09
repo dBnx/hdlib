@@ -1,17 +1,19 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
+
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 import random
 
 REQ_UNSIGNED = 0b0000
-REQ_SIGNED   = 0b1000
-REQ_WIDTH_8  = 0b0000
+REQ_SIGNED = 0b1000
+REQ_WIDTH_8 = 0b0000
 REQ_WIDTH_16 = 0b0001
 REQ_WIDTH_32 = 0b0010
 
 # TODO: Currently only 32b works / is tested
+
 
 async def reset(dut) -> None:
     dut.req.value = 0
@@ -30,9 +32,10 @@ async def reset(dut) -> None:
     dut.reset.value = 0
     await Timer(1, "ps")
 
+
 @cocotb.test()
 async def test_idle(dut) -> None:
-    """ Reset and do not issue a request, then monitor I/O lines """
+    """Reset and do not issue a request, then monitor I/O lines"""
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset(dut)
@@ -52,7 +55,7 @@ async def test_idle(dut) -> None:
         await Timer(1, "ps")
         await RisingEdge(dut.clk)
         await Timer(1, "ps")
-        
+
         # HART Interface
         assert 0 == dut.valid.value
         assert 0 == dut.error.value
@@ -64,7 +67,8 @@ async def test_idle(dut) -> None:
         assert 0 == dut.dext_wr.value
         assert 0 == dut.dext_do.value
 
-async def deassert_stall_after(dut, n_cycles: int, data: int|None = None, then_error: bool = False) -> None:
+
+async def deassert_stall_after(dut, n_cycles: int, data: int | None = None, then_error: bool = False) -> None:
     """Mock external interface by:
     - Assert stall for n_cycles if non-zero
     - Then asser ack or err, depending on `then_error`
@@ -108,17 +112,21 @@ async def latency_verification(dut, write_read: bool, data: int | None, latency:
     # Wait `latency` and don't deassert
     for _ in range(latency):
         await RisingEdge(dut.clk)
-        await FallingEdge(dut.clk) # Wait for the mock to set signals
-        # await Timer(1, "ns") 
+        await FallingEdge(dut.clk)  # Wait for the mock to set signals
+        # await Timer(1, "ns")
         # await Timer(1, "ps") # Ensure they are propagated
+        # TODO: BE
         assert 1 == dut.dext_req.value, "No request issued"
         assert write_read == dut.dext_wr.value, "Wrong request issued"
         if write_read is True:
             assert hex(data) == hex(dut.dext_do.value), "External IF has no data or doesn't hold"
 
-async def issue_command(dut, write_read: bool, addr: int, data: int | None = None, latency: int = 1, issue_ack: bool = True):
+
+async def issue_command(
+    dut, write_read: bool, addr: int, data: int | None = None, latency: int = 1, issue_ack: bool = True
+):
     assert addr > 0 and data > 0 and latency >= 0, "Invalid values"
-    assert not ( write_read is True and data is None ), "Usage error: Write expects data"
+    assert not (write_read is True and data is None), "Usage error: Write expects data"
 
     # Setup operation
     dut.req.value = 1
@@ -158,7 +166,7 @@ async def return_verification(dut, write_read: bool, expect_ack: bool, data: int
     - Wait one edge to pass through to the HART IF
     - Verify received signals
     """
-    assert not ( write_read is True and data is None ), "Usage error: Write expects data"
+    assert not (write_read is True and data is None), "Usage error: Write expects data"
 
     await Timer(1, "ns")
 
@@ -173,7 +181,7 @@ async def return_verification(dut, write_read: bool, expect_ack: bool, data: int
     # NOTE: Ack takes also 1 cycle to pass through ..
     await RisingEdge(dut.clk)
     await Timer(1, "ns")
-    
+
     assert 1 if expect_ack is True else 0 == dut.valid.value, "Expected ack"
     assert 1 if expect_ack is False else 0 == dut.error.value, "Expected err"
     assert 0 == dut.stall.value
@@ -190,15 +198,16 @@ async def return_verification(dut, write_read: bool, expect_ack: bool, data: int
     # assert 0 == dut.data_o.value
     # TODO: Check stall from 0 to here
 
+
 @cocotb.test()
 async def test_write32_single(dut) -> None:
-    """ Issue writes with zero latency feedback """
+    """Issue writes with zero latency feedback"""
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset(dut)
     await Timer(1, "ps")
 
-    latency =random.randint(1,4) 
+    latency = random.randint(1, 4)
     data = random.getrandbits(32)
     addr = random.getrandbits(32)
 
@@ -209,9 +218,10 @@ async def test_write32_single(dut) -> None:
     assert 0 == dut.valid
     assert 0 == dut.stall
 
+
 @cocotb.test()
 async def test_write32_two_read_back(dut) -> None:
-    """ Issue writes with zero latency feedback """
+    """Issue writes with zero latency feedback"""
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset(dut)
@@ -225,14 +235,15 @@ async def test_write32_two_read_back(dut) -> None:
         addr_b = random.getrandbits(32)
 
     await Timer(1, "ns")
-    await issue_command(dut, write_read=True,  addr=addr_a, data=data_a, latency=random.randint(1,2))
+    await issue_command(dut, write_read=True, addr=addr_a, data=data_a, latency=random.randint(1, 2))
     await RisingEdge(dut.clk)
-    await issue_command(dut, write_read=True,  addr=addr_b, data=data_b, latency=random.randint(1,2))
-    await issue_command(dut, write_read=False, addr=addr_a, data=data_a, latency=random.randint(1,2))
+    await issue_command(dut, write_read=True, addr=addr_b, data=data_b, latency=random.randint(1, 2))
+    await issue_command(dut, write_read=False, addr=addr_a, data=data_a, latency=random.randint(1, 2))
     await RisingEdge(dut.clk)
     await FallingEdge(dut.clk)
     assert 0 == dut.valid
     assert 0 == dut.stall
+
 
 # TODO: Implement different widths: 16b, 8b
 # @cocotb.test()
@@ -257,6 +268,7 @@ async def test_write_instant_ack_100(dut) -> None:
         await RisingEdge(dut.clk)
         await Timer(1, "ps")
 
+
 # @cocotb.test()
 async def test_write_instant_ack_200(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
@@ -278,6 +290,7 @@ async def test_write_instant_ack_200(dut) -> None:
         await Timer(1, "ps")
         await RisingEdge(dut.clk)
         await Timer(1, "ps")
+
 
 # @cocotb.test()
 async def test_write_instant_ack_300(dut) -> None:
@@ -346,10 +359,10 @@ def test_runner():
         # always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
-    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{hdl_toplevel}_test,",
-                waves=True, extra_env={"WAVES": "1"})
+    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{hdl_toplevel}_test,", waves=True, extra_env={"WAVES": "1"})
 
 
 if __name__ == "__main__":

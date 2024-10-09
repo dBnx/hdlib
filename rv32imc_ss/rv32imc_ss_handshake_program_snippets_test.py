@@ -1,8 +1,17 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer, First, ClockCycles
+
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
+import random
+
+
+class QuitMessage(BaseException):
+    """Used to gracefully close parallel running tasks"""
+
+    pass
+
 
 async def reset_dut(dut):
     dut.reset.value = 1
@@ -16,31 +25,137 @@ async def reset_dut(dut):
     dut.reset.value = 0
     await Timer(1, "ps")
 
+
 def get_registerfile(dut) -> dict[str, int]:
-    ret: dict[str,int] = {}
+    # ret: dict[str,int] = {ret[f"x{i}"]: int(v) for  i, v in enumerate(dut.inst_registerfile.registerfile.value)}
+    ret: dict[str, int] = {}
     for i, v in enumerate(dut.inst_registerfile.registerfile.value):
         ret[f"x{i}"] = v
+
     return ret
 
+
+def set_registerfile(dut, values: dict[str, int]):
+    for i, v in enumerate(values.values()):
+        dut.inst_registerfile.registerfile[i].value = v
+
+
 def get_pc(dut) -> dict[str, int]:
-    return {
-        "current":dut.pc_current.value,
-        "next"   :dut.pc_next.value
-    }
+    return {"current": dut.pc_current.value, "next": dut.pc_next.value}
+
 
 async def exec_nop(dut, count: int = 1):
     """Execute `count` nops. Also useful at the end of tests for cleaner traces"""
     dut.instr_ack.value = 1
     dut.instr_err.value = 0
-    dut.instr_data_i.value = 0x00000013 # addi x0, x0, 0
+    dut.instr_data_i.value = 0x00000013  # addi x0, x0, 0
     for _ in range(count):
         await RisingEdge(dut.clk)
     dut.instr_ack.value = 0
 
-async def run_program(dut, program: dict[int, int], memory: dict[int, int] = dict()) -> dict:
+
+"""Defines R/W memory regions for a program"""
+MemoryRegions: type = list[tuple[int, int]]
+"""RAM mock mapping address to data"""
+Memory: type = dict[int, int]
+"""Defines two regions: After INITIAL_GP and close to address zero"""
+DefaultMemoryRegions = [(1024, 4096), ((1 << 31), (1 << 31) + 4096)]
+
+
+async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory = dict()):
+    if memory_regions is None:
+        await RisingEdge(dut.data_req)
+        assert False, "Received data request even though nothing was specified"
+
+    async def wait_at_least_one_cycle(dut, maximum: int = 4) -> None:
+        await RisingEdge(dut.clk)
+        wait_cycles = random.randrange(0, max(0, maximum))
+        for _ in range(wait_cycles):
+            await RisingEdge(dut.clk)
+
+        await Timer(1, "ns")
+
+    async def ack_and_set_data_o(dut, data: int | None = None) -> None:
+        dut.data_ack.value = 1
+        if data is not None:
+            dut.data_data_i.value = data
+
+        await Timer(1, "ps")
+        await RisingEdge(dut.clk)
+        await Timer(1, "ns")
+        dut.data_ack.value = 0
+
+        await Timer(1, "ns")
+        await RisingEdge(dut.clk)
+        await Timer(1, "ps")
+
+    try:
+        while True:
+            await RisingEdge(dut.data_req)
+            await Timer(1, "ns")
+            is_write = bool(dut.data_wr.value)
+            addr = int(dut.data_addr.value)
+
+            in_range: bool = False
+            for start, end in memory_regions:
+                if addr >= start and addr <= end:
+                    in_range = True
+                    break
+
+            is_write_str = "W" if is_write else "R"
+            if in_range is False:
+                await Timer(2, "ns")
+                cocotb.log.error(f"Accessing memory region outside of specified regions: {is_write_str} @ {addr:06X}")
+                readable_regions = " ".join(f"{start:08X}-{end:08X}" for start, end in memory_regions)
+                cocotb.log.error(f"Defined regions: {readable_regions}")
+                assert False, "Invalid I/O or memory access"
+
+            cocotb.log.warning(
+                f"Accessing memory region inside specified regions: {is_write_str} {addr:08X}"
+            )  # TODO: RMME
+
+            if is_write is True:
+                data = int(dut.data_data_o.value)
+                cocotb.log.warning(f"W {data:=08X}")
+                # Wait some time and ack
+                await wait_at_least_one_cycle(dut)
+                await ack_and_set_data_o(dut)
+                memory[addr] = data
+            else:  # Read
+                if addr not in memory.keys():
+                    cocotb.log.warning(f"Reading uninitialized field @ {addr:08X}")
+                    memory[addr] = 0
+
+                data = memory[addr]
+                # Wait some time
+                await wait_at_least_one_cycle(dut)
+                # Ack and provide
+                await ack_and_set_data_o(dut, data=data)
+
+            readable_memory = {f"{addr:08X}": v for addr, v in memory.items()}
+            cocotb.log.error(f"{type(memory)}, {readable_memory}")
+            await Timer(1, "ps")
+    #except QuitMessage as _:
+    #    cocotb.log.warning("Received QuitMessage")
+    #    return memory
+    except StopIteration:
+        cocotb.log.warning("Received QuitMessage")
+        cocotb.log.error(f"{type(memory)}, {memory}")
+        return memory
+
+    return memory
+
+
+async def run_program(
+    dut,
+    program: dict[int, int],
+    memory_regions: MemoryRegions | None = DefaultMemoryRegions,
+    memory: dict[int, int] = dict(),
+) -> dict:
     """Provides given instruction to the HART and returns if an
     unassigned address is accessed. Crashes if first instruction is not in the program"""
-    # TODO: Add LSU Watcher
+
+    lsu_watcher_handle = cocotb.start_soon(lsu_watcher(dut, memory_regions=memory_regions, memory=memory))
 
     dut.instr_ack.value = 1
     dut.instr_err.value = 0
@@ -51,6 +166,7 @@ async def run_program(dut, program: dict[int, int], memory: dict[int, int] = dic
             # print(f"{dut.branch_taken.value=}")
             # print(f"{dut.pc_overwrite_data.value=}")
             if dut.branch_taken.value == 1 and int(dut.pc_overwrite_data.value) in program:
+                cocotb.log.info("Jump at end of valid program region.")
                 # print("Jump at end of valid program region.")
                 pass
             else:
@@ -68,11 +184,32 @@ async def run_program(dut, program: dict[int, int], memory: dict[int, int] = dic
         # next clock edge ..
         await Timer(1, "ps")
         await RisingEdge(dut.clk)
-        await Timer(1, "ps") 
+        await Timer(1, "ps")
 
     dut.instr_ack.value = 0
 
-    return dict()
+    # lsu_watcher_handle.throw(QuitMessage)
+    lsu_watcher_handle.send(QuitMessage)
+    await Timer(1, "ps")
+    # sleep(0.1)
+    # lsu_watcher_handle.cancel()
+    # lsu_watcher_handle.close()
+
+    if lsu_watcher_handle.done():
+        cocotb.log.error("Result")
+        return lsu_watcher_handle.result()
+    
+    cocotb.log.error("Empty")
+
+    # assert memory_region is None, "LSU mock did not finish, but expected io was provided"
+
+    return memory
+
+
+def instr_list_to_program(dut, instructions: list[str]):
+    base_addr = int(dut.pc_current.value)
+    return {base_addr + 4 * i: instr for i, instr in enumerate(instructions)}
+
 
 @cocotb.test()
 async def test_first_instruction(dut):
@@ -80,12 +217,14 @@ async def test_first_instruction(dut):
 
     await reset_dut(dut)
 
-    base_addr = int(dut.pc_current.value)
-    program = {
-        base_addr + 0x00: 0x00108093, # addi x1, x1, 1
-        base_addr + 0x04: 0x00000013, # addi x0, x0, 0
-        base_addr + 0x08: 0x00000013, # addi x0, x0, 0
-    }
+    program = instr_list_to_program(
+        dut,
+        [
+            0x00108093,  # addi x1, x1, 1
+            0x00000013,  # addi x0, x0, 0
+            0x00000013,  # addi x0, x0, 0
+        ],
+    )
 
     initial_x1 = get_registerfile(dut)["x1"]
 
@@ -101,23 +240,23 @@ async def test_first_instruction(dut):
     # Better trace:
     await exec_nop(dut, count=2)
 
+
 @cocotb.test()
 async def test_jal_loop(dut):
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset_dut(dut)
 
-    base_addr = int(dut.pc_current.value)
-    program = {
-        base_addr + 0x00: 0x00000013, # addi x0, x0, 0
-        base_addr + 0x04: 0x00108093, # addi x1, x1, 1
-        base_addr + 0x08: 0x00108093, # addi x1, x1, 1
-        base_addr + 0x0C: 0xFF9FF06F, # jal  x0, -8
-        # base_addr + 0x0C: 0xFFDFF06F, # jal  x0, -4 
-    }
-
-    #for k, v in program.items():
-    #    print(f"{hex(k):10}: {hex(v):10}")
+    program = instr_list_to_program(
+        dut,
+        [
+            0x00000013,  # addi x0, x0, 0
+            0x00108093,  # addi x1, x1, 1
+            0x00108093,  # addi x1, x1, 1
+            0xFF9FF06F,  # jal  x0, -8
+            # 0xFFDFF06F, # jal  x0, -4
+        ],
+    )
 
     initial_x1 = get_registerfile(dut)["x1"]
     program_runner = cocotb.start_soon(run_program(dut, program))
@@ -130,6 +269,50 @@ async def test_jal_loop(dut):
 
     # Better trace:
     await exec_nop(dut, count=2)
+
+
+@cocotb.test()
+async def test_load_store(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    # TODO: Remove below and fix initialization
+    initial_rf = get_registerfile(dut)
+    initial_rf["x3"] = 1 << 31
+    set_registerfile(dut, initial_rf)
+
+    program = instr_list_to_program(
+        dut,
+        [
+            0x12300293,  # addi x5, x0, 0x123 (291)
+            0x0051A023,  # sw x5, 0(GP)
+            0x00000013,  # addi x0, x0, 0 # TODO: Remove me
+            0x0001A303,  # lw x6, 0(GP)
+            0x00000013,  # addi x0, x0, 0 # TODO: Remove me
+        ],
+    )
+
+    # initial_x5 = get_registerfile(dut)["x5"]
+    program_runner = cocotb.start_soon(run_program(dut, program))
+
+    timeout = ClockCycles(dut.clk, 30)
+    await First(program_runner, timeout)
+    await Timer(2, "ns")
+
+    assert program_runner.done() is True, "Timeout before program could finish"
+
+    mem = program_runner.result()
+    readable_memory = {f"{addr:08X}": v for addr, v in mem.items()}
+    cocotb.log.error(f"{type(mem)}, {readable_memory}")
+    assert len(mem.keys()) == 1, "Expect one initialized memory location"
+    assert 0x123 == mem[1 << 31]
+
+    result_x6 = get_registerfile(dut)["x6"]
+    assert 0x123 == result_x6, "Read-from memory value @GP is 0x123 (291)"
+
+    await exec_nop(dut, count=2)
+
 
 def test_runner():
     import os
@@ -163,11 +346,11 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
-    test_module = os.path.basename(__file__).replace(".py","")
-    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{test_module},",
-                waves=True, extra_env={"WAVES": "1"})
+    test_module = os.path.basename(__file__).replace(".py", "")
+    runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{test_module},", waves=True, extra_env={"WAVES": "1"})
 
 
 if __name__ == "__main__":
