@@ -6,6 +6,11 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First, ClockCycles
 from dataclasses import dataclass
 import random
 
+ADDI_X0_X0_0 = 0x00000013
+SW_X5_0_GP = 0x0051a023
+SW_X6_1_GP = 0x0061a0a3
+LW_X7_0_GP = 0x0001a383
+LW_X8_1_GP = 0x0011a403
 
 class QuitMessage(BaseException):
     """Used to gracefully close parallel running tasks"""
@@ -82,8 +87,8 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
 
         await Timer(1, "ps")
         await RisingEdge(dut.clk)
-        await Timer(1, "ns")
         dut.data_ack.value = 0
+        await Timer(1, "ns")
 
         await Timer(1, "ns")
         await RisingEdge(dut.clk)
@@ -132,7 +137,8 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
                 # Ack and provide
                 await ack_and_set_data_o(dut, data=data)
 
-            readable_memory = {f"{addr:08X}": v for addr, v in memory.items()}
+            readable_memory = {f"0x{addr:08X}": f"0x{v:0X}" for addr, v in memory.items()}
+            readable_memory = {f"0x{addr:08X}": v for addr, v in memory.items()}
             cocotb.log.error(f"{type(memory)}, {readable_memory}")
             await Timer(1, "ps")
     #except QuitMessage as _:
@@ -199,7 +205,7 @@ async def run_program(
         cocotb.log.error("Result")
         return lsu_watcher_handle.result()
     
-    cocotb.log.error("Empty")
+    cocotb.log.error("Mem Empty ?")
 
     # assert memory_region is None, "LSU mock did not finish, but expected io was provided"
 
@@ -260,19 +266,26 @@ async def test_jal_loop(dut):
 
     initial_x1 = get_registerfile(dut)["x1"]
     program_runner = cocotb.start_soon(run_program(dut, program))
-    timeout = ClockCycles(dut.clk, 22)
+    cycles = 22
+    timeout = ClockCycles(dut.clk, cycles)
     await First(program_runner, timeout)
 
     x1 = get_registerfile(dut)["x1"]
     n_increments = x1 - initial_x1
-    assert n_increments >= 10
+    exp_incs = (cycles - 1) // 3 * 2
+    cocotb.log.info(f"Number of increments in loop: {n_increments}, expected {exp_incs}")
+    assert n_increments == exp_incs
+
 
     # Better trace:
     await exec_nop(dut, count=2)
 
+SW_X5_0_GP = 0x0051A023
+ADDI_X5_X0_0x123 = 0x12300293
+LW_X6_0_GP = 0x0001A303
 
 @cocotb.test()
-async def test_load_store(dut):
+async def test_store_load_interleaved_nop(dut):
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset_dut(dut)
@@ -285,11 +298,11 @@ async def test_load_store(dut):
     program = instr_list_to_program(
         dut,
         [
-            0x12300293,  # addi x5, x0, 0x123 (291)
-            0x0051A023,  # sw x5, 0(GP)
-            0x00000013,  # addi x0, x0, 0 # TODO: Remove me
-            0x0001A303,  # lw x6, 0(GP)
-            0x00000013,  # addi x0, x0, 0 # TODO: Remove me
+            ADDI_X5_X0_0x123,
+            SW_X5_0_GP,
+            ADDI_X0_X0_0, # Interleaved NOP
+            LW_X6_0_GP,
+            ADDI_X0_X0_0, # TODO: Remove me
         ],
     )
 
@@ -313,6 +326,96 @@ async def test_load_store(dut):
 
     await exec_nop(dut, count=2)
 
+@cocotb.test()
+async def test_store_load(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    # TODO: Remove below and fix initialization
+    initial_rf = get_registerfile(dut)
+    initial_rf["x3"] = 1 << 31
+    set_registerfile(dut, initial_rf)
+
+    program = instr_list_to_program(
+        dut,
+        [
+            ADDI_X5_X0_0x123,
+            SW_X5_0_GP,
+            LW_X6_0_GP,
+            ADDI_X0_X0_0, # TODO: Remove me
+        ],
+    )
+
+    # initial_x5 = get_registerfile(dut)["x5"]
+    program_runner = cocotb.start_soon(run_program(dut, program))
+
+    timeout = ClockCycles(dut.clk, 30)
+    await First(program_runner, timeout)
+    await Timer(2, "ns")
+
+    assert program_runner.done() is True, "Timeout before program could finish"
+
+    mem = program_runner.result()
+    readable_memory = {f"{addr:08X}": v for addr, v in mem.items()}
+    cocotb.log.error(f"{type(mem)}, {readable_memory}")
+    assert len(mem.keys()) == 1, "Expect one initialized memory location"
+    assert 0x123 == mem[1 << 31]
+
+    result_x6 = get_registerfile(dut)["x6"]
+    assert 0x123 == result_x6, "Read-from memory value @GP is 0x123 (291)"
+
+    await exec_nop(dut, count=2)
+
+@cocotb.test()
+async def test_write_write_read_read(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    # TODO: Remove below and fix initialization
+    initial_rf = get_registerfile(dut)
+    initial_rf["x3"] = 1 << 31
+    initial_rf["x5"] = 0xC0FE_C0CA
+    initial_rf["x6"] = 0xDEAD_F00D
+    set_registerfile(dut, initial_rf)
+
+    program = instr_list_to_program(
+        dut,
+        [
+            SW_X5_0_GP,
+            ADDI_X0_X0_0,
+            SW_X6_1_GP,
+            ADDI_X0_X0_0,
+            LW_X7_0_GP,
+            ADDI_X0_X0_0,
+            LW_X8_1_GP,
+            ADDI_X0_X0_0, # TODO: Remove me
+        ],
+    )
+
+    program_runner = cocotb.start_soon(run_program(dut, program))
+
+    timeout = ClockCycles(dut.clk, 30)
+    await First(program_runner, timeout)
+    await Timer(2, "ns")
+
+    assert program_runner.done() is True, "Timeout before program could finish"
+
+    mem = program_runner.result()
+    readable_memory = {f"{addr:08X}": v for addr, v in mem.items()}
+    cocotb.log.error(f"{type(mem)}, {readable_memory}")
+    assert len(mem.keys()) == 2, "Expect two initialized memory location"
+    assert 0xC0FE_C0CA == mem[(1 << 31) + 0]
+    assert 0xDEAD_F00D == mem[(1 << 31) + 4]
+
+    regfile = get_registerfile(dut)
+    result_x7 = regfile["x7"]
+    result_x8 = regfile["x8"]
+    assert 0xC0FE_C0CA == result_x7, "Read-from memory value @GP is 0xC0FE_C0CA"
+    assert 0xDEAD_F00D == result_x8, "Read-from memory value @GP is 0xDEAD_F00D"
+
+    await exec_nop(dut, count=2)
 
 def test_runner():
     import os
@@ -332,6 +435,7 @@ def test_runner():
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
         project_path / "rv32_mod_pc.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",
         project_path / f"{hdl_toplevel}.sv",

@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module rv32_mod_instruction_decoder_imm (
     input [31:0] instruction,
     input [ 5:0] instruction_format,
@@ -42,5 +44,5 @@ module rv32_mod_instruction_decoder_imm (
   assign imm[30:20] = is_u_not_j ? imm_30_20 : sign[30:20];
   assign imm[31]    = instruction[31];
 
-  assign immediate = is_r_type ? 0 : imm;
+  assign immediate  = is_r_type ? 0 : imm;
 endmodule

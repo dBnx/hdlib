@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 `define OP_OP_IMM    5'b00100 // I
 `define OP_OP_IMM_32 5'b00110 // I
 `define OP_LUI       5'b01101 // U

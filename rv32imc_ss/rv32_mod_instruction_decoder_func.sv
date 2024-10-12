@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 /*
 typedef enum logic [2:0] {
   BR_COND_EQ,
