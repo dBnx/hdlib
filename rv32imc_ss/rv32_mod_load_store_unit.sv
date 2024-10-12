@@ -4,16 +4,20 @@
 // Min latency: 1 cycle, as everything is registerd without skid buffers
 // Some computation (sign) is done on dext_di, so it may not be stable too
 // late in a cycle
+
+// FIXME: Address uses bytes and must actually be word aligned
+//        Do an effective address by cutting of last two bits and use it to shift
+//        Byte enable mask. If it crosses the 4b boundary, cry
 module rv32_mod_load_store_unit (
-    input clk,
-    input reset,
+    input  logic clk,
+    input  logic reset,
 
     // HART interface
-    input               req,
-    input        [ 3:0] req_type,  // [S,U]; Reserved; Size
-    input               wr,
-    input        [31:0] address,
-    input        [31:0] data_i,
+    input  logic        req,
+    input  logic [ 3:0] req_type,  // [S,U]; Reserved; Size
+    input  logic        wr,
+    input  logic [31:0] address,
+    input  logic [31:0] data_i,
     output logic [31:0] data_o,
     output logic        valid,
     output logic        error,
@@ -22,12 +26,12 @@ module rv32_mod_load_store_unit (
     // External interface
     output logic        dext_req,
     output logic        dext_wr,
-    input               dext_ack,
-    input               dext_err,
+    input  logic        dext_ack,
+    input  logic        dext_err,
     output logic [ 3:0] dext_be,
     output logic [31:0] dext_addr,
     output logic [31:0] dext_do,
-    input        [31:0] dext_di
+    input  logic [31:0] dext_di
 );
   logic [3:0] dext_be_comb;
   logic [31:0] dext_di_comb;

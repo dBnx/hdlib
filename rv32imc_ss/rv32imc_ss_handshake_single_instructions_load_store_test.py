@@ -171,16 +171,18 @@ async def test_s_sw(dut) -> None:
 
     await rv32imc.exec_nop(dut)
 
-# @cocotb.test()
+@cocotb.test()
 async def test_s_lb(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
     await Timer(1, "ps")
 
     rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
     rv32imc.set_registerfile(dut, rf)
 
-    instr = 0x00130283 # lb x5, 1(x6)
+    instr = 0x00130283 # LB x5, 1(x6)
     await rv32imc.exec_instr(dut, instr)
     await FallingEdge(dut.clk)
 
@@ -188,7 +190,34 @@ async def test_s_lb(dut) -> None:
     assert 0 == dut.data_wr.value
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 0 == dut.data_addr.value, "offset of one is within a data word"
-    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
+
+    for _ in range(3):
+        await RisingEdge(dut.clk)
+    await Timer(1, "ns")
+
+    dut.data_ack.value = 0b1
+    dut.data_data_i.value = 0x23
+
+    await Timer(1, "ns")
+    await RisingEdge(dut.clk)
+    await Timer(1, "ns")
+
+    dut.data_ack.value = 0b0
+    dut.data_data_i.value = 0x0
+
+    await Timer(1, "ns")
+    await RisingEdge(dut.clk) # Wait for LSU
+    await Timer(1, "ns")
+    assert 0x23 == rv32imc.get_registerfile(dut)["x5"]
+    await RisingEdge(dut.clk) # Wait for write-back
+    await Timer(1, "ns")
+
+    assert 0x23 == rv32imc.get_registerfile(dut)["x5"]
+
+    await RisingEdge(dut.clk)
+
+    assert 0x23 == rv32imc.get_registerfile(dut)["x5"]
+    # assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
 
     await rv32imc.exec_nop(dut)
 
@@ -226,7 +255,9 @@ async def test_s_lh(dut) -> None:
     await Timer(1, "ps")
     dut.data_ack.value = 0
 
-    # assert 0x1234 == get_registerfile(dut)["x5"]
+    assert 0x1234 == get_registerfile(dut)["x5"]
+    await RisingEdge(dut.clk)
+    assert 0x1234 == get_registerfile(dut)["x5"]
 
     await rv32imc.exec_nop(dut)
 

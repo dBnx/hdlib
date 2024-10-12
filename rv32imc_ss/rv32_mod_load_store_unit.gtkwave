@@ -1,33 +1,41 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sun Aug 25 15:33:59 2024
+[*] Sat Oct 12 22:37:40 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32_mod_load_store_unit/dump.vcd"
-[dumpfile_mtime] "Sun Aug 25 15:32:10 2024"
-[dumpfile_size] 1175
-[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32_mod_load_store_unit.gtkwave"
+[dumpfile_mtime] "Sat Oct 12 22:20:17 2024"
+[dumpfile_size] 3250
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_single_instructions_load_store_test.gtkwave"
 [timestart] 0
 [size] 1920 1001
 [pos] -27 -24
-*-13.000000 14780 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.000000 49230 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 273
-[signals_width] 265
+[signals_width] 316
 [sst_expanded] 1
-[sst_vpaned_height] 296
+[sst_vpaned_height] 207
 @200
 -SYSCON
 @28
+[color] 3
 rv32_mod_load_store_unit.reset
+[color] 3
 rv32_mod_load_store_unit.clk
 @200
--Interface - HART
+-Hart
 @28
+[color] 2
 rv32_mod_load_store_unit.req
+[color] 2
 rv32_mod_load_store_unit.req_type[3:0]
+[color] 2
 rv32_mod_load_store_unit.wr
 @22
+[color] 2
 rv32_mod_load_store_unit.address[31:0]
+[color] 2
 rv32_mod_load_store_unit.data_i[31:0]
+[color] 2
 rv32_mod_load_store_unit.data_o[31:0]
 @28
 [color] 2
@@ -37,29 +45,38 @@ rv32_mod_load_store_unit.error
 [color] 2
 rv32_mod_load_store_unit.stall
 @200
--Interface - External
+-External
 @28
+[color] 3
 rv32_mod_load_store_unit.dext_req
+[color] 3
 rv32_mod_load_store_unit.dext_wr
-[color] 2
+[color] 3
 rv32_mod_load_store_unit.dext_ack
-[color] 2
+[color] 3
 rv32_mod_load_store_unit.dext_err
+@22
+[color] 3
+rv32_mod_load_store_unit.dext_addr[31:0]
+@28
+[color] 3
 rv32_mod_load_store_unit.dext_be[3:0]
 @22
-rv32_mod_load_store_unit.dext_addr[31:0]
-rv32_mod_load_store_unit.dext_do[31:0]
+[color] 3
 rv32_mod_load_store_unit.dext_di[31:0]
+[color] 3
+rv32_mod_load_store_unit.dext_do[31:0]
 @200
 -Internal
+@23
+rv32_mod_load_store_unit.dext_di_comb[31:0]
+@22
+rv32_mod_load_store_unit.dext_be_comb[3:0]
 @28
 rv32_mod_load_store_unit.req_active
 rv32_mod_load_store_unit.req_signed
 rv32_mod_load_store_unit.req_size[1:0]
-@29
-rv32_mod_load_store_unit.dext_be_comb[3:0]
 @22
-rv32_mod_load_store_unit.dext_di_comb[31:0]
 rv32_mod_load_store_unit.sign[31:8]
 @28
 rv32_mod_load_store_unit.sign_8

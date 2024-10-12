@@ -116,7 +116,7 @@ async def latency_verification(dut, write_read: bool, data: int | None, latency:
         # await Timer(1, "ns")
         # await Timer(1, "ps") # Ensure they are propagated
         # TODO: BE
-        assert 1 == dut.dext_req.value, "No request issued"
+        assert 0 == dut.dext_req.value, "Do keep issuing new requests"
         assert write_read == dut.dext_wr.value, "Wrong request issued"
         if write_read is True:
             assert hex(data) == hex(dut.dext_do.value), "External IF has no data or doesn't hold"
