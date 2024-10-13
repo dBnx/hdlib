@@ -1,14 +1,18 @@
 `timescale 1ns / 1ps
 
 module rv32_mod_instruction_decoder_imm (
-    input [31:0] instruction,
-    input [ 5:0] instruction_format,
+    input  logic [31:0] instruction,
+    input  logic [ 5:0] instruction_format,
+    input  logic [ 3:0] req_type,
+    input  logic        is_mem_or_io,
 
-
-    output [31:0] immediate
+    output logic [31:0] immediate
 );
   bit is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j;
   assign {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j} = instruction_format;
+
+  bit [ 1:0] req_width;
+  assign req_width = req_type[1:0];
 
   // Different fragments used to create it. Numbers represent bit ranges.
   bit [10:0] imm_30_20;
@@ -44,5 +48,15 @@ module rv32_mod_instruction_decoder_imm (
   assign imm[30:20] = is_u_not_j ? imm_30_20 : sign[30:20];
   assign imm[31]    = instruction[31];
 
-  assign immediate  = is_r_type ? 0 : imm;
+  always_comb begin
+    if(is_r_type) begin
+      immediate  = is_r_type ? 0 : imm;
+    end else if(!is_mem_or_io) begin
+      immediate  = imm;
+    end else begin
+      // Shift by two for words and by one for half words
+      // We have to shift everything in case of signedness
+      immediate  = imm << req_width;
+    end
+  end
 endmodule

@@ -264,6 +264,8 @@ module rv32imc_ss_handshake #(
   rv32_mod_instruction_decoder_imm inst_instr_dec_imm (
       .instruction       (if_instruction),
       .instruction_format(id_instruction_format),
+      .is_mem_or_io      (is_mem_or_io),
+      .req_type          (lsu_req_type),
       .immediate         (immediate)
   );
 

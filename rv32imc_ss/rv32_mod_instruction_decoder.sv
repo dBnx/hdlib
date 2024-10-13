@@ -14,16 +14,16 @@
 `define OP_SYSTEM    5'b11100 // I
 
 module rv32_mod_instruction_decoder (
-    input  [31:0] instruction,
+    input  logic [31:0] instruction,
 
-    output [ 4:0] rf_read0_index,
-    output [ 4:0] rf_read1_index,
-    output [ 4:0] rf_write0_index,
+    output logic [ 4:0] rf_read0_index,
+    output logic [ 4:0] rf_read1_index,
+    output logic [ 4:0] rf_write0_index,
 
-    output [ 5:0] instruction_format,
-    output [ 5:0] func,
-    output logic      is_mem_or_io,
-    output logic      is_compressed
+    output logic [ 5:0] instruction_format,
+    output logic [ 5:0] func,
+    output logic        is_mem_or_io,
+    output logic        is_compressed
 );
     bit [6:0] opcode;
     assign opcode = instruction[6:0];

@@ -392,11 +392,8 @@ async def test_write_write_read_read(dut):
         dut,
         [
             SW_X5_0_GP,
-            ADDI_X0_X0_0,
             SW_X6_1_GP,
-            ADDI_X0_X0_0,
             LW_X7_0_GP,
-            ADDI_X0_X0_0,
             LW_X8_1_GP,
             ADDI_X0_X0_0, # TODO: Remove me
         ],

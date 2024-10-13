@@ -35,21 +35,21 @@ typedef bit [2:0] br_condition_t;
 `define BR_COND_LE 6
 
 module rv32_mod_instruction_decoder_func (
-    input [5:0] instruction_format,  // or opcode?
-    input [5:0] func,
-    input [0:0] is_mem_or_io,
+    input  logic      [ 5:0] instruction_format,  // or opcode?
+    input  logic      [ 5:0] func,
+    input  logic      [ 0:0] is_mem_or_io,
 
     output logic             rf_write0_enable,
     output logic             alu_op0_use_pc,
     output logic             alu_op1_use_imm,
-    output logic       [4:0] alu_func,
-    output logic       [3:0] ram_req,
+    output logic      [ 4:0] alu_func,
+    output logic      [ 3:0] ram_req,
     output logic             ram_wr,
     output wb_source_t       wb_source,
 
-    output br_condition_t br_cond,
-    output logic          br_is_cond,
-    output logic          br_jmp
+    output br_condition_t    br_cond,
+    output logic             br_is_cond,
+    output logic             br_jmp
 );
   // {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
 

@@ -120,12 +120,14 @@ module rv32_mod_load_store_unit (
     endcase
   end
 
+  // assign dext_addr = dext_req ? {address[31:2], 2'h0} : 0;
+  assign dext_addr = {address[31:2], 2'h0};
+
   // HART Output
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
       dext_req <= 0;
       dext_wr <= 0;
-      dext_addr <= 0;
       dext_be <= 0;
       dext_do <= 0;
 
@@ -136,7 +138,6 @@ module rv32_mod_load_store_unit (
       // Reset IF only if no active or incomming rq
       dext_req <= 0;
       dext_wr <= 0;
-      dext_addr <= 0;
       dext_be <= 0;
       dext_do <= 0;
 
@@ -147,7 +148,6 @@ module rv32_mod_load_store_unit (
       // Hold?
       dext_req  <= 1; // Reset after 1 clock
       dext_wr   <= wr;
-      dext_addr <= {address[31:2], 2'h0};
       dext_be   <= dext_be_comb;
       // dext_do   <= 0;
 
