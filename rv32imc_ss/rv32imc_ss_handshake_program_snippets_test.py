@@ -59,13 +59,15 @@ async def exec_nop(dut, count: int = 1):
     dut.instr_ack.value = 0
 
 
-"""Defines R/W memory regions for a program"""
 MemoryRegions: type = list[tuple[int, int]]
-"""RAM mock mapping address to data"""
+"""Defines R/W memory regions for a program"""
 Memory: type = dict[int, int]
-"""Defines two regions: After INITIAL_GP and close to address zero"""
+"""RAM mock mapping address to data"""
 DefaultMemoryRegions = [(1024, 4096), ((1 << 31), (1 << 31) + 4096)]
+"""Defines two regions: After INITIAL_GP and close to address zero"""
 
+STOP_WATCHER: bool = False
+"""Applies after the next rising edge"""
 
 async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory = dict()):
     if memory_regions is None:
@@ -96,7 +98,12 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
 
     try:
         while True:
-            await RisingEdge(dut.data_req)
+            while dut.data_req.value == 0:
+                if STOP_WATCHER is True:
+                    return memory
+
+                await RisingEdge(dut.clk)
+
             await Timer(1, "ns")
             is_write = bool(dut.data_wr.value)
             addr = int(dut.data_addr.value)
@@ -107,21 +114,20 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
                     in_range = True
                     break
 
-            is_write_str = "W" if is_write else "R"
+            data = int(dut.data_data_o.value)
+            is_write_str = f"W {data:=08X}" if is_write else "R"
             if in_range is False:
                 await Timer(2, "ns")
-                cocotb.log.error(f"Accessing memory region outside of specified regions: {is_write_str} @ {addr:06X}")
+                cocotb.log.error(f"Accessing memory region outside of specified regions: @ {addr:06X} {is_write_str}")
                 readable_regions = " ".join(f"{start:08X}-{end:08X}" for start, end in memory_regions)
                 cocotb.log.error(f"Defined regions: {readable_regions}")
                 assert False, "Invalid I/O or memory access"
 
             cocotb.log.warning(
-                f"Accessing memory region inside specified regions: {is_write_str} {addr:08X}"
+                f"Accessing memory region inside specified regions: @ {addr:08X} {is_write_str}"
             )  # TODO: RMME
 
             if is_write is True:
-                data = int(dut.data_data_o.value)
-                cocotb.log.warning(f"W {data:=08X}")
                 # Wait some time and ack
                 await wait_at_least_one_cycle(dut)
                 await ack_and_set_data_o(dut)
@@ -137,9 +143,8 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
                 # Ack and provide
                 await ack_and_set_data_o(dut, data=data)
 
-            readable_memory = {f"0x{addr:08X}": f"0x{v:0X}" for addr, v in memory.items()}
-            readable_memory = {f"0x{addr:08X}": v for addr, v in memory.items()}
-            cocotb.log.error(f"{type(memory)}, {readable_memory}")
+            # readable_memory = {f"0x{addr:08X}": f"0x{v:0X}" for addr, v in memory.items()}
+            # cocotb.log.error(f"{type(memory)}, {readable_memory}")
             await Timer(1, "ps")
     #except QuitMessage as _:
     #    cocotb.log.warning("Received QuitMessage")
@@ -195,7 +200,10 @@ async def run_program(
     dut.instr_ack.value = 0
 
     # lsu_watcher_handle.throw(QuitMessage)
-    lsu_watcher_handle.send(QuitMessage)
+    global STOP_WATCHER
+    STOP_WATCHER = False
+    await RisingEdge(dut.clk) # TODO: Find better solution that doesn't need it
+    # lsu_watcher_handle.send(QuitMessage)
     await Timer(1, "ps")
     # sleep(0.1)
     # lsu_watcher_handle.cancel()
@@ -292,7 +300,7 @@ async def test_store_load_interleaved_nop(dut):
 
     # TODO: Remove below and fix initialization
     initial_rf = get_registerfile(dut)
-    initial_rf["x3"] = 1 << 31
+    initial_rf["x3"] = 1 << 31 # Setup GP
     set_registerfile(dut, initial_rf)
 
     program = instr_list_to_program(
@@ -403,7 +411,7 @@ async def test_write_write_read_read(dut):
     assert program_runner.done() is True, "Timeout before program could finish"
 
     mem = program_runner.result()
-    readable_memory = {f"{addr:08X}": v for addr, v in mem.items()}
+    readable_memory = {f"0x{addr:08X}": f"0x{v:08X}" for addr, v in mem.items()}
     cocotb.log.error(f"{type(mem)}, {readable_memory}")
     assert len(mem.keys()) == 2, "Expect two initialized memory location"
     assert 0xC0FE_C0CA == mem[(1 << 31) + 0]

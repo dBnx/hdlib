@@ -19,8 +19,16 @@
 `define BR_COND_LE 6
 
 module rv32imc_ss_handshake #(
-    parameter logic [31:0] INITIAL_GP = 32'h10000000,
-    parameter logic [31:0] INITIAL_SP = 32'h7ffffff0
+    parameter logic [31:0] INITIAL_PC = 32'h10000000,
+    parameter logic [31:0] INITIAL_GP = 32'h80000000,
+    parameter logic [31:0] INITIAL_SP = 32'h7FFFFFF0,
+
+    parameter logic [31:0] INITIAL_MTVEC   = 32'h00010000,
+    parameter logic [31:0] INITIAL_MSTATUS = 32'h00000080,
+    parameter logic [31:0] MVENDOR_ID      = 32'h00000000,
+    parameter logic [31:0] MARCH_ID        = 32'h00000000,
+    parameter logic [31:0] MIMP_ID         = 32'h00000000,
+    parameter logic [31:0] MHART_ID        = 32'h00000000
     // parameter logic [31:0] INITIAL_MTVEC = INITIAL_GP & 1, // 32'h10000000,
 ) (
     input logic clk,
@@ -209,7 +217,9 @@ module rv32imc_ss_handshake #(
       .instr_data_i(instr_data_i)
   );
 
-  rv32_mod_pc inst_pc (
+  rv32_mod_pc #(
+        .INITIAL_PC(INITIAL_PC)
+  ) inst_pc (
       .clk  (clk),
       .reset(reset),
 
@@ -257,7 +267,10 @@ module rv32imc_ss_handshake #(
       .immediate         (immediate)
   );
 
-  rv32_mod_registerfile inst_registerfile (
+  rv32_mod_registerfile #(
+        .INITIAL_GP(INITIAL_GP),
+        .INITIAL_SP(INITIAL_SP)
+  ) inst_registerfile (
       .clk  (clk),
       .reset(reset), // DOME
 
@@ -310,4 +323,11 @@ module rv32imc_ss_handshake #(
       .dext_di  (data_data_i)
   );
 
+  // TODO: Inst CSR
+  // .INITIAL_MTVEC  (INITIAL_MTVEC   ),
+  // .INITIAL_MSTATUS(INITIAL_MSTATUS ),
+  // .MVENDOR_ID     (MVENDOR_ID      ),
+  // .MARCH_ID       (MARCH_ID        ),
+  // .MIMP_ID        (MIMP_ID         ),
+  // .MHART_ID       (MHART_ID        )
 endmodule

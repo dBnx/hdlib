@@ -91,10 +91,12 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        timescale=("1ns", "1ps"),
+        waves=True
     )
 
     runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{hdl_toplevel}_test,",
-                waves=True, extra_env={"WAVES": "1"})
+                waves=True, extra_env={"WAVES": "1"}, test_args=["--trace", "--trace-structs"], plusargs=["--trace", "--trace-structs"])
 
 
 if __name__ == "__main__":

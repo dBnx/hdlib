@@ -5,9 +5,7 @@
 // Some computation (sign) is done on dext_di, so it may not be stable too
 // late in a cycle
 
-// FIXME: Address uses bytes and must actually be word aligned
-//        Do an effective address by cutting of last two bits and use it to shift
-//        Byte enable mask. If it crosses the 4b boundary, cry
+// FIXME: Check for unaligned reads and writes
 module rv32_mod_load_store_unit (
     input  logic clk,
     input  logic reset,
@@ -33,6 +31,12 @@ module rv32_mod_load_store_unit (
     output logic [31:0] dext_do,
     input  logic [31:0] dext_di
 );
+
+  // The address provided is byte oriented, but we operate an words,
+  // so set lower two bits permanently to 0 and shift BE by the offset. 
+  // Assume aligned reads / writes.
+  logic [1:0] be_shift = address[1:0];
+
   logic [3:0] dext_be_comb;
   logic [31:0] dext_di_comb;
 
@@ -69,16 +73,16 @@ module rv32_mod_load_store_unit (
     // dext_be_comb is registered with the request, so calc from input
     case (req_type[1:0])  // == req_size
       //  8-bit
-      2'b00:   dext_be_comb = 1'b1 << address[1:0];
+      2'b00:   dext_be_comb = 1'b1 << be_shift;
       // 16-bit
-      2'b01:   dext_be_comb = address[1] ? 4'b1100 : 4'b0011;
+      2'b01:   dext_be_comb = be_shift[1] ? 4'b1100 : 4'b0011;
       // 32-bit
       2'b10:   dext_be_comb = 4'b1111;
       default: dext_be_comb = 0;
     endcase
 
     // TODO: Fix timing and use external address?
-    case (dext_addr[1:0])
+    case (be_shift)
       2'b00:   sign_8 = dext_di[7];
       2'b01:   sign_8 = dext_di[15];
       2'b10:   sign_8 = dext_di[23];
@@ -96,7 +100,7 @@ module rv32_mod_load_store_unit (
 
     case (req_size)
       2'b00: begin  // 8b
-        case (dext_addr[1:0])
+        case (be_shift)
           2'b00:   dext_di_comb = {sign[31:8], dext_di[7:0]};
           2'b01:   dext_di_comb = {sign[31:8], dext_di[15:8]};
           2'b10:   dext_di_comb = {sign[31:8], dext_di[23:16]};

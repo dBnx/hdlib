@@ -83,14 +83,72 @@ async def test_factorial_with_soft_imul(dut):
     )
 
     program_runner = cocotb.start_soon(run_program(dut, program))
-    timeout = ClockCycles(dut.clk, 12)
+    timeout = ClockCycles(dut.clk, 120)
     await First(program_runner, timeout)
+    assert program_runner.done() is True, "Timeout before program could finish"
 
     await RisingEdge(dut.clk)
 
-    x5 = get_registerfile(dut)["x5"]
+    t1 = get_registerfile(dut)["x6"]
     five_factorial = 120
-    assert five_factorial == x5, "If not, first instruction is executed multiple times"
+    assert five_factorial == t1, "5! = 120 expected"
+
+
+lui_x3_0x80000 = 0x800001b7
+addi_x5_x0_4   = 0x00400293
+addi_x6_x0_0   = 0x00000313
+addi_x7_x0_0   = 0x00000393
+
+addi_x6_x6_1  = 0x00130313        
+addi_x7_x7_4  = 0x00438393        
+add_x28_x3_x7 = 0x00718e33        
+sw_x6_0_x28   = 0x006e2023        
+addi_x5_x5_m1 = 0xfff28293        
+bne_x5_x0_m20 = 0xfe0296e3        
+
+@cocotb.test()
+async def test_simple_loop_with_store(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset_dut(dut)
+
+    program = instr_list_to_program(
+        dut,
+        [
+            lui_x3_0x80000,
+            addi_x5_x0_4,
+            addi_x6_x0_0,
+            addi_x7_x0_0,
+        # loop: +0x10
+            addi_x6_x6_1,
+            addi_x7_x7_4,
+            add_x28_x3_x7,
+            sw_x6_0_x28,
+            addi_x5_x5_m1,
+            bne_x5_x0_m20,
+        # end: +0x28
+            addi_x0_x0_0
+        ],
+    )
+
+    # initial_rf = get_registerfile(dut)
+    # initial_rf["x3"] = 1 << 31 # Setup GP
+    # set_registerfile(dut, initial_rf)
+
+    program_runner = cocotb.start_soon(run_program(dut, program))
+    timeout = ClockCycles(dut.clk, 120)
+    await First(program_runner, timeout)
+    assert program_runner.done() is True, "Timeout before program could finish"
+
+    mem = program_runner.result()
+
+    readable_memory = {f"0x{addr:08X}": f"0x{v:08X}" for addr, v in mem.items()}
+    cocotb.log.info(f"Mem: {readable_memory}")
+
+    assert 1 == mem[0x8000_0004]
+    assert 2 == mem[0x8000_0008]
+    assert 3 == mem[0x8000_000C]
+    assert 4 == mem[0x8000_0010]
 
 
 def test_runner():
