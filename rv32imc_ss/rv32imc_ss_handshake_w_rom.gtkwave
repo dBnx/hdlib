@@ -1,0 +1,171 @@
+[*]
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Mon Oct 14 21:05:57 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake_w_rom/dump.vcd"
+[dumpfile_mtime] "Mon Oct 14 20:57:49 2024"
+[dumpfile_size] 43528
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_w_rom.gtkwave"
+[timestart] 0
+[size] 1920 1033
+[pos] -27 -24
+*-15.499999 151700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] rv32imc_ss_handshake_w_rom.
+[treeopen] rv32imc_ss_handshake_w_rom.inst_hart.
+[sst_width] 273
+[signals_width] 292
+[sst_expanded] 1
+[sst_vpaned_height] 307
+@22
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_END_MMR[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_END_RAM[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_END_ROM[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_START_MMR[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_START_RAM[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.BASE_START_ROM[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.INITIAL_GP[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.INITIAL_PC[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.INITIAL_SP[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.ROM_DEPTH32[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.MMR_DEPTH32[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.RAM_DEPTH32[31:0]
+@24
+[color] 7
+rv32imc_ss_handshake_w_rom.MmrW[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.RamW[31:0]
+[color] 7
+rv32imc_ss_handshake_w_rom.RomW[31:0]
+@200
+-IPath - I/O
+@28
+[color] 2
+rv32imc_ss_handshake_w_rom.instr_req
+[color] 2
+rv32imc_ss_handshake_w_rom.instr_ack
+[color] 2
+rv32imc_ss_handshake_w_rom.instr_err
+@22
+[color] 2
+rv32imc_ss_handshake_w_rom.instr_addr[31:0]
+[color] 2
+rv32imc_ss_handshake_w_rom.instr_data_i[31:0]
+@200
+-DPath - I/O
+@28
+[color] 3
+rv32imc_ss_handshake_w_rom.data_req
+[color] 3
+rv32imc_ss_handshake_w_rom.data_wr
+[color] 3
+rv32imc_ss_handshake_w_rom.data_ack
+[color] 3
+rv32imc_ss_handshake_w_rom.data_err
+@22
+[color] 3
+rv32imc_ss_handshake_w_rom.data_addr[31:0]
+@28
+[color] 3
+rv32imc_ss_handshake_w_rom.data_be[3:0]
+@22
+[color] 3
+rv32imc_ss_handshake_w_rom.data_data_i[31:0]
+[color] 3
+rv32imc_ss_handshake_w_rom.data_data_o[31:0]
+@200
+-Syscon
+@28
+[color] 2
+rv32imc_ss_handshake_w_rom.reset
+[color] 2
+rv32imc_ss_handshake_w_rom.clk
+@200
+-Internal
+-IPath - I/O - Internal
+@28
+rv32imc_ss_handshake_w_rom.instr_req_int
+rv32imc_ss_handshake_w_rom.instr_ack_int
+rv32imc_ss_handshake_w_rom.instr_err_int
+@22
+rv32imc_ss_handshake_w_rom.instr_addr_int[31:0]
+rv32imc_ss_handshake_w_rom.instr_data_i_int[31:0]
+@200
+-DPath - I/O - Internal
+@28
+rv32imc_ss_handshake_w_rom.data_req_int
+rv32imc_ss_handshake_w_rom.data_wr_int
+rv32imc_ss_handshake_w_rom.data_ack_int
+rv32imc_ss_handshake_w_rom.data_err_int
+@22
+rv32imc_ss_handshake_w_rom.data_addr32_int[29:0]
+rv32imc_ss_handshake_w_rom.data_addr_int[31:0]
+rv32imc_ss_handshake_w_rom.data_data_i_int[31:0]
+rv32imc_ss_handshake_w_rom.data_data_o_int[31:0]
+@200
+-Arbitration - Internal
+@28
+[color] 2
+rv32imc_ss_handshake_w_rom.enable_ipath_rom
+[color] 2
+rv32imc_ss_handshake_w_rom.enable_dpath_rom
+[color] 6
+rv32imc_ss_handshake_w_rom.enable_dpath_mmr
+[color] 3
+rv32imc_ss_handshake_w_rom.enable_dpath_ram
+rv32imc_ss_handshake_w_rom.enable_dpath_internal
+@200
+-iROM - Internal
+@28
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_ack
+@22
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_ipath_addr[8:0]
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_dpath_addr[8:0]
+@200
+-iRAM - Internal
+@28
+[color] 3
+rv32imc_ss_handshake_w_rom.ram_ack
+@23
+[color] 3
+rv32imc_ss_handshake_w_rom.ram_dpath_addr[8:0]
+@200
+-MMR - Internal
+@28
+[color] 6
+rv32imc_ss_handshake_w_rom.mmr_ack
+@22
+[color] 6
+rv32imc_ss_handshake_w_rom.mmr_data_o[31:0]
+[color] 6
+rv32imc_ss_handshake_w_rom.mmr_dpath_addr[8:0]
+@28
+[color] 6
+rv32imc_ss_handshake_w_rom.gpio_enable
+[color] 6
+rv32imc_ss_handshake_w_rom.gpio_addr[2:0]
+@200
+-Regs - HART
+@22
+rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[3][31:0]
+rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[5][31:0]
+rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[6][31:0]
+rv32imc_ss_handshake_w_rom.inst_hart.inst_pc.pc_current[31:0]
+@200
+-Temp
+[pattern_trace] 1
+[pattern_trace] 0

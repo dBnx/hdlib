@@ -65,7 +65,7 @@ module rv32_mod_load_store_unit (
   logic sign_16;
   logic sign_8;
   logic sign_bit;
-  assign sign_16 = address[1] ? dext_di[31] : dext_di[15];
+  assign sign_16 = be_shift[1] ? dext_di[31] : dext_di[15];
   assign sign = {24{sign_bit}};
 
   // FIXME: Add handling of unaligned store / loads
@@ -121,7 +121,7 @@ module rv32_mod_load_store_unit (
   end
 
   // assign dext_addr = dext_req ? {address[31:2], 2'h0} : 0;
-  assign dext_addr = {address[31:2], 2'h0};
+  // assign dext_addr = {address[31:2], 2'h0};
 
   // HART Output
   always_ff @(posedge clk or posedge reset) begin
@@ -130,6 +130,7 @@ module rv32_mod_load_store_unit (
       dext_wr <= 0;
       dext_be <= 0;
       dext_do <= 0;
+      dext_addr <= 0;
 
       stall <= 0;
       req_signed <= 0;
@@ -140,6 +141,7 @@ module rv32_mod_load_store_unit (
       dext_wr <= 0;
       dext_be <= 0;
       dext_do <= 0;
+      dext_addr <= 0;
 
       stall <= 0;
       req_signed <= 0;
@@ -150,6 +152,7 @@ module rv32_mod_load_store_unit (
       dext_wr   <= wr;
       dext_be   <= dext_be_comb;
       // dext_do   <= 0;
+      dext_addr <= {address[31:2], 2'h0};
 
       if (wr) begin
         dext_do <= data_i;
