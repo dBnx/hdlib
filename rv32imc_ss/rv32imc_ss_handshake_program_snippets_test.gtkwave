@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sat Oct 12 21:41:44 2024
+[*] Sun Oct 13 10:20:20 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Sat Oct 12 21:38:58 2024"
-[dumpfile_size] 38942
+[dumpfile_mtime] "Sun Oct 13 10:17:12 2024"
+[dumpfile_size] 26887
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_program_snippets_test.gtkwave"
 [timestart] 0
 [size] 1920 1001
 [pos] -27 -24
-*-15.000000 74300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.000000 66800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
 [signals_width] 316
@@ -90,6 +90,7 @@ rv32imc_ss_handshake.alu_op1_use_imm
 @22
 rv32imc_ss_handshake.alu_read0_data[31:0]
 rv32imc_ss_handshake.alu_read1_data[31:0]
+@23
 rv32imc_ss_handshake.alu_result[31:0]
 @200
 -Branch Unit - Internal
@@ -106,9 +107,8 @@ rv32imc_ss_handshake.func[5:0]
 rv32imc_ss_handshake.if_valid
 @200
 -ID - Internal
-@23
-rv32imc_ss_handshake.id_instruction_format[5:0]
 @22
+rv32imc_ss_handshake.id_instruction_format[5:0]
 rv32imc_ss_handshake.if_instruction[31:0]
 @28
 rv32imc_ss_handshake.if_instr_req

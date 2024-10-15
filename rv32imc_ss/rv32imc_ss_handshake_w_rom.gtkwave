@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Mon Oct 14 21:05:57 2024
+[*] Tue Oct 15 19:24:41 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake_w_rom/dump.vcd"
-[dumpfile_mtime] "Mon Oct 14 20:57:49 2024"
-[dumpfile_size] 43528
+[dumpfile_mtime] "Tue Oct 15 19:23:00 2024"
+[dumpfile_size] 45925
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_w_rom.gtkwave"
 [timestart] 0
 [size] 1920 1033
-[pos] -27 -24
-*-15.499999 151700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 1945 -10
+*-15.499999 176700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake_w_rom.
 [treeopen] rv32imc_ss_handshake_w_rom.inst_hart.
 [sst_width] 273
 [signals_width] 292
 [sst_expanded] 1
-[sst_vpaned_height] 307
+[sst_vpaned_height] 226
 @22
 [color] 7
 rv32imc_ss_handshake_w_rom.BASE_END_MMR[31:0]
@@ -140,7 +140,7 @@ rv32imc_ss_handshake_w_rom.rom_dpath_addr[8:0]
 @28
 [color] 3
 rv32imc_ss_handshake_w_rom.ram_ack
-@23
+@22
 [color] 3
 rv32imc_ss_handshake_w_rom.ram_dpath_addr[8:0]
 @200
@@ -164,8 +164,28 @@ rv32imc_ss_handshake_w_rom.gpio_addr[2:0]
 rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[3][31:0]
 rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[5][31:0]
 rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[6][31:0]
+[color] 1
 rv32imc_ss_handshake_w_rom.inst_hart.inst_pc.pc_current[31:0]
 @200
 -Temp
+@29
+[color] 5
+gpio_i_update[7:0]
+@28
+[color] 5
+gpio_o_update[7:0]
+@22
+[color] 7
+gpio_i[0][31:0]
+[color] 7
+gpio_o[0][31:0]
+[color] 7
+gpio_i[1][31:0]
+[color] 7
+gpio_o[1][31:0]
+[color] 7
+gpio_i[2][31:0]
+[color] 7
+gpio_o[2][31:0]
 [pattern_trace] 1
 [pattern_trace] 0

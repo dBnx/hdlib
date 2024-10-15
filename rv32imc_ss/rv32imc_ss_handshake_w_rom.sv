@@ -29,8 +29,10 @@ module rv32imc_ss_handshake_w_rom #(
     input  logic [31:0] data_data_i,
 
     // TODO: GPIO
-    output logic [31:0] gpio_o[8],
-    input  logic [31:0] gpio_i[8]
+    output logic [31:0] gpio_o[GpioN],
+    input  logic [31:0] gpio_i[GpioN],
+    output logic [GpioN-1:0] gpio_o_update,
+    output logic [GpioN-1:0] gpio_i_update
 );
   // TODO: Ensure rest is also connected
   assign data_wr = data_wr_int;
@@ -45,9 +47,14 @@ module rv32imc_ss_handshake_w_rom #(
   localparam int BASE_START_MMR = 1024; // 256 Registers
   localparam int BASE_END_MMR   = 2048;
 
+  localparam int MmrOffsetGpio = 'h030; // Offset to BASE_START_MMR for the GPIO registers
+
   localparam int RomW = $clog2(ROM_DEPTH32);
-  localparam int MmrW = $clog2(MMR_DEPTH32);
   localparam int RamW = $clog2(RAM_DEPTH32);
+  localparam int MmrW = $clog2(MMR_DEPTH32);
+
+  localparam int GpioN = 8;
+  localparam int GpioW = $clog2(GpioN);
 
   // Helper addresses, as we don't care about anything under a 32B alignment (width of BE)
   bit [29:0] instr_addr32_int;
@@ -138,7 +145,7 @@ module rv32imc_ss_handshake_w_rom #(
         ram_ack <= 1;
 
         if(data_wr_int) begin
-          ram[ram_dpath_addr] <= data_data_o;
+          ram[ram_dpath_addr] <= data_data_o_int;
         end
       end else begin
         ram_ack <= 0;
@@ -151,16 +158,15 @@ module rv32imc_ss_handshake_w_rom #(
   logic        mmr_ack;
 
   // GPIOs
-  logic [31:0] gpio[8];
   logic        gpio_enable;
-  logic [ 2:0] gpio_addr;
+  logic [GpioW-1:0] gpio_addr;
 
   // MTIME
   // TODO: & timecmp
 
   // TODO: Byte enable for RAM & GPIO writes
 
-  assign gpio_enable = enable_dpath_mmr && mmr_dpath_addr[MmrW-1:3] == 0;
+  assign gpio_enable = enable_dpath_mmr && mmr_dpath_addr[MmrW-1:3] == MmrOffsetGpio[MmrW-1-3:0];
   assign gpio_addr = mmr_dpath_addr[2:0];
 
   always_ff @(posedge clk or posedge reset) begin
@@ -173,10 +179,12 @@ module rv32imc_ss_handshake_w_rom #(
         if(gpio_enable) begin
           if(data_wr_int) begin
             // GPIO W
-            gpio[gpio_addr] <= data_data_o;
+            gpio_o[gpio_addr] <= data_data_o_int;
+            gpio_o_update[gpio_addr] <= 1;
           end else begin
             // GPIO R
-            mmr_data_o <= gpio[gpio_addr];
+            mmr_data_o <= gpio_i[gpio_addr];
+            gpio_i_update[gpio_addr] <= 1;
           end
         end else begin
           // Non_GPIO
@@ -186,6 +194,17 @@ module rv32imc_ss_handshake_w_rom #(
         mmr_ack <= 0;
         mmr_data_o <= 0;
       end
+    end
+
+    // Reset all gpio update bits after one cycle
+    // SAFETY: This is safe as we can't update gpios in two consecutive cycles, so
+    //         there is no conflict with setting it.
+    if(gpio_o_update != 0) begin
+      gpio_o_update <= 0;
+    end
+
+    if(gpio_i_update != 0) begin
+      gpio_i_update <= 0;
     end
   end
 

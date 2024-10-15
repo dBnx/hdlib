@@ -63,7 +63,7 @@ MemoryRegions: type = list[tuple[int, int]]
 """Defines R/W memory regions for a program"""
 Memory: type = dict[int, int]
 """RAM mock mapping address to data"""
-DefaultMemoryRegions = [(1024, 4096), ((1 << 31), (1 << 31) + 4096)]
+DefaultMemoryRegions = [(1024, 4096), ((1 << 28), (1 << 28) + 4096), ((1 << 31), (1 << 31) + 4096)]
 """Defines two regions: After INITIAL_GP and close to address zero"""
 
 STOP_WATCHER: bool = False
@@ -156,35 +156,70 @@ async def lsu_watcher(dut, memory_regions: MemoryRegions | None, memory: Memory 
 
     return memory
 
+def _dut_instruction_in_range(dut, program: dict[int, int], memory_regions: MemoryRegions, memory_regions_are_valid_instr: bool):
+
+    instr_fetch_addr = int(dut.pc_current.value)
+
+    if memory_regions_are_valid_instr is False and instr_fetch_addr not in program:
+        # print(f"{dut.branch_taken.value=}")
+        # print(f"{dut.pc_overwrite_data.value=}")
+        if dut.branch_taken.value == 1 and int(dut.pc_overwrite_data.value) in program:
+            cocotb.log.info("Jump at end of valid program region.")
+            # print("Jump at end of valid program region.")
+            pass
+        else:
+            cocotb.log.info(f"{hex(instr_fetch_addr)} not in program. Quitting.")
+            return False
+
+    elif memory_regions_are_valid_instr is True:
+        # Just check if it's within a valid memory region
+        invalid: bool = True
+
+        branch_taken = dut.branch_taken.value == 1
+        addr = instr_fetch_addr if branch_taken is False else int(dut.pc_overwrite_data.value)
+
+        for start, end in memory_regions:
+            if addr >= start and addr < end:
+                invalid = False
+                break
+        
+        if invalid is True:
+            if branch_taken is True:
+                cocotb.log.info(f"Jump address @ {addr:08X} not in memory regions. Quitting.")
+            else:
+                cocotb.log.info(f"Current instruction @ {addr:08X} not in memory regions. Quitting.")
+
+            readable_regions = " ".join(f"{start:08X}-{end:08X}" for start, end in memory_regions)
+            cocotb.log.error(f"Defined regions: {readable_regions}")
+            return False
+
+    return True
 
 async def run_program(
     dut,
     program: dict[int, int],
     memory_regions: MemoryRegions | None = DefaultMemoryRegions,
     memory: dict[int, int] = dict(),
+    memory_regions_are_valid_instr: bool = False,
+    lsu_watcher_cb = lsu_watcher,
 ) -> dict:
     """Provides given instruction to the HART and returns if an
     unassigned address is accessed. Crashes if first instruction is not in the program"""
 
-    lsu_watcher_handle = cocotb.start_soon(lsu_watcher(dut, memory_regions=memory_regions, memory=memory))
+    if lsu_watcher_cb is not None:
+        lsu_watcher_handle = cocotb.start_soon(lsu_watcher_cb(dut, memory_regions=memory_regions, memory=memory))
 
     dut.instr_ack.value = 1
     dut.instr_err.value = 0
 
     while True:
         instr_fetch_addr = int(dut.pc_current.value)
-        if instr_fetch_addr not in program:
-            # print(f"{dut.branch_taken.value=}")
-            # print(f"{dut.pc_overwrite_data.value=}")
-            if dut.branch_taken.value == 1 and int(dut.pc_overwrite_data.value) in program:
-                cocotb.log.info("Jump at end of valid program region.")
-                # print("Jump at end of valid program region.")
-                pass
-            else:
-                #             await Timer(1, "ps")print(f"{hex(instr_fetch_addr)} not in program. Quitting.")
-                break
+        if _dut_instruction_in_range(dut, program, memory_regions, memory_regions_are_valid_instr) is False:
+            break
 
-        if instr_fetch_addr in program:
+        if memory_regions_are_valid_instr is True:
+            dut.instr_ack.value = 1
+        elif instr_fetch_addr in program:
             dut.instr_ack.value = 1
             dut.instr_data_i.value = program[instr_fetch_addr]
             # print(f"Prog @ {hex(instr_fetch_addr)}: {hex(program[instr_fetch_addr])}")
@@ -209,7 +244,7 @@ async def run_program(
     # lsu_watcher_handle.cancel()
     # lsu_watcher_handle.close()
 
-    if lsu_watcher_handle.done():
+    if lsu_watcher_cb is not None and lsu_watcher_handle.done():
         cocotb.log.error("Result")
         return lsu_watcher_handle.result()
     

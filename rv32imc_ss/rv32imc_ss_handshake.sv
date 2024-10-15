@@ -6,17 +6,17 @@
 // `include "rv32imc_ss/rv32_mod_alu.sv"
 
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC 1
+`define WB_SOURCE_PC  1
 `define WB_SOURCE_LSU 2
-
+`define WB_SOURCE_CSR 3
 
 `define BR_COND_NOP 0
-`define BR_COND_EQ 1
-`define BR_COND_NE 2
-`define BR_COND_GT 3
-`define BR_COND_GE 4
-`define BR_COND_LT 5
-`define BR_COND_LE 6
+`define BR_COND_EQ  1
+`define BR_COND_NE  2
+`define BR_COND_GT  3
+`define BR_COND_GE  4
+`define BR_COND_LT  5
+`define BR_COND_LE  6
 
 module rv32imc_ss_handshake #(
     parameter logic [31:0] INITIAL_PC = 32'h10000000,
@@ -31,8 +31,8 @@ module rv32imc_ss_handshake #(
     parameter logic [31:0] MHART_ID        = 32'h00000000
     // parameter logic [31:0] INITIAL_MTVEC = INITIAL_GP & 1, // 32'h10000000,
 ) (
-    input logic clk,
-    input logic reset,
+    input  logic        clk,
+    input  logic        reset,
 
     output logic        instr_req,
     input  logic        instr_ack,
@@ -79,8 +79,9 @@ module rv32imc_ss_handshake #(
     case (wb_source)
       // TODO: Move encoding inside instr decode (?)
       `WB_SOURCE_ALU: rf_write0_data = alu_result;
-      `WB_SOURCE_PC: rf_write0_data = pc_next;  // To register must be next
+      `WB_SOURCE_PC:  rf_write0_data = pc_next;  // To register must be next
       `WB_SOURCE_LSU: rf_write0_data = lsu_data_o;
+      `WB_SOURCE_CSR: rf_write0_data = csr_data_o;
       default: rf_write0_data = 0;
     endcase
   end
@@ -264,8 +265,6 @@ module rv32imc_ss_handshake #(
   rv32_mod_instruction_decoder_imm inst_instr_dec_imm (
       .instruction       (if_instruction),
       .instruction_format(id_instruction_format),
-      .is_mem_or_io      (is_mem_or_io),
-      .req_type          (lsu_req_type),
       .immediate         (immediate)
   );
 
@@ -325,11 +324,80 @@ module rv32imc_ss_handshake #(
       .dext_di  (data_data_i)
   );
 
-  // TODO: Inst CSR
-  // .INITIAL_MTVEC  (INITIAL_MTVEC   ),
-  // .INITIAL_MSTATUS(INITIAL_MSTATUS ),
-  // .MVENDOR_ID     (MVENDOR_ID      ),
-  // .MARCH_ID       (MARCH_ID        ),
-  // .MIMP_ID        (MIMP_ID         ),
-  // .MHART_ID       (MHART_ID        )
+    // TODO: Finish:
+    //       - CSR integration
+    //       - Sync exceptions
+    //       - Interrupts
+
+    assign csr_data_o = 0;
+    logic [31:0] csr_data_o;
+    /*
+    logic [ 1:0] priviledge = 0;
+    rv32_mod_csrs #(
+        .INITIAL_MTVEC  (INITIAL_MTVEC   ),
+        .INITIAL_MSTATUS(INITIAL_MSTATUS ),
+        .MVENDOR_ID     (MVENDOR_ID      ),
+        .MARCH_ID       (MARCH_ID        ),
+        .MIMP_ID        (MIMP_ID         ),
+        .MHART_ID       (MHART_ID        )
+    ) inst_csrs (
+        .clk  (clk),
+        .reset(reset),
+
+        .priviledge(priviledge),
+
+
+        // <<<< Register file I/O >>>>
+        input logic wr,
+        input logic rd,
+        output logic error,
+        input logic [11:0] addr,
+        input logic [31:0] data_i,
+        output logic [31:0] data_o, // registered
+
+        // <<<< TRAPS >>>>
+        input logic [31:0] mip_new,
+        output logic [31:0] mip_cur,
+
+        // input  logic [5:0] interrupts,
+        input  logic trap_handler_clear,
+        output logic trap_handler_active,
+
+        // Explicit exception causes
+        // input logic exception_instr_addr_misaligned,
+        // input logic exception_instr_access_fault,
+        // input logic exception_illegal_instruction,
+        // input logic exception_breakpoint,
+        // input logic exception_load_addr_misaligned,
+        // input logic exception_load_access_fault,
+        // input logic exception_store_addr_misaligned,
+        // input logic exception_store_access_fault,
+        // input logic exception_ecall_from_u_mode,
+        // input logic exception_ecall_from_s_mode,
+        // input logic exception_ecall_from_m_mode,
+        // input logic exception_instr_page_fault,
+        // input logic exception_load_page_fault,
+        // input logic exception_store_page_fault,
+
+        // New signals for assigning to csr_mepc and csr_mtval
+        input logic [31:0] current_pc,
+        input logic [31:0] faulting_address,
+        input logic [31:0] faulting_instruction,
+
+        output logic serve_trap, // registered
+
+        // <<<< CSRs direct access >>>>
+        output logic [31:0] mstatus,
+        output logic [31:0] mepc,
+        output logic [31:0] mtval,
+        output logic [31:0] mtvec,
+        // Machine Interrupt Pending
+        output logic [31:0] mip,
+        // Machine Interrupt Enable
+        output logic [31:0] mie
+        // output logic [31:0] mscratch,
+        // output logic [31:0] mtime,
+        // output logic [31:0] mcycle
+    );
+    */
 endmodule
