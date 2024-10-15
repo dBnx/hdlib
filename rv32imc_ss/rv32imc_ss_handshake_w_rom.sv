@@ -133,7 +133,7 @@ module rv32imc_ss_handshake_w_rom #(
   // TODO: Change declaration of location + size to be more intuitive
 
   // TODO: Byte enable
-  bit [31:0] ram[RAM_DEPTH32];
+  bit [3:0][7:0] ram[RAM_DEPTH32];
   logic ram_ack;
 
   always_ff @(posedge clk or posedge reset) begin
@@ -145,7 +145,9 @@ module rv32imc_ss_handshake_w_rom #(
         ram_ack <= 1;
 
         if(data_wr_int) begin
-          ram[ram_dpath_addr] <= data_data_o_int;
+          for(int i = 0; i < 4; i = i + 1) begin
+            ram[ram_dpath_addr][i] <= data_data_o_int[i*8 +: 8];
+          end
         end
       end else begin
         ram_ack <= 0;
@@ -158,7 +160,7 @@ module rv32imc_ss_handshake_w_rom #(
   logic        mmr_ack;
 
   // GPIOs
-  logic        gpio_enable;
+  logic             gpio_enable;
   logic [GpioW-1:0] gpio_addr;
 
   // MTIME
@@ -179,7 +181,10 @@ module rv32imc_ss_handshake_w_rom #(
         if(gpio_enable) begin
           if(data_wr_int) begin
             // GPIO W
-            gpio_o[gpio_addr] <= data_data_o_int;
+            // gpio_o[gpio_addr] <= data_data_o_int;
+            for(int i = 0; i < 4; i = i + 1) begin
+              gpio_o[gpio_addr][i*8 +: 8] <= data_data_o_int[i*8 +: 8];
+            end
             gpio_o_update[gpio_addr] <= 1;
           end else begin
             // GPIO R
