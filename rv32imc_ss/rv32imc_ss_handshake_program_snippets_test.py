@@ -8,9 +8,9 @@ import random
 
 ADDI_X0_X0_0 = 0x00000013
 SW_X5_0_GP = 0x0051a023
-SW_X6_1_GP = 0x0061a0a3
+SW_X6_4_GP = 0x0061a223
 LW_X7_0_GP = 0x0001a383
-LW_X8_1_GP = 0x0011a403
+LW_X8_4_GP = 0x0041a403
 
 class QuitMessage(BaseException):
     """Used to gracefully close parallel running tasks"""
@@ -427,9 +427,9 @@ async def test_write_write_read_read(dut):
         dut,
         [
             SW_X5_0_GP,
-            SW_X6_1_GP,
+            SW_X6_4_GP,
             LW_X7_0_GP,
-            LW_X8_1_GP,
+            LW_X8_4_GP,
             ADDI_X0_X0_0, # TODO: Remove me
         ],
     )
@@ -469,6 +469,7 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",

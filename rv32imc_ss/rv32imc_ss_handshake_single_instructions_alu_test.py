@@ -4,6 +4,7 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First, ClockCycles
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 
+
 async def reset_dut(dut):
     dut.reset.value = 1
     dut.instr_ack.value = 0
@@ -18,20 +19,23 @@ async def reset_dut(dut):
 
 
 def get_registerfile(dut) -> dict[str, int]:
-    ret: dict[str,intjkk] = {}
+    ret: dict[str, int] = {}
     for i, v in enumerate(dut.inst_registerfile.registerfile.value):
         ret[f"x{i}"] = v
     return ret
+
 
 def set_registerfile(dut, values: dict[str, int]):
     for i, v in enumerate(values.values()):
         dut.inst_registerfile.registerfile[i].value = v
 
+
 def get_pc(dut) -> dict[str, int]:
     return {
-        "current":dut.pc_current.value,
-        "next"   :dut.pc_next.value
+        "current": dut.pc_current.value,
+        "next": dut.pc_next.value
     }
+
 
 async def exec_instr(dut, instruction: int, count: int = 1):
     """Execute `count` nops. Also useful at the end of tests for cleaner traces"""
@@ -44,20 +48,23 @@ async def exec_instr(dut, instruction: int, count: int = 1):
         await Timer(1, "ps")
     dut.instr_ack.value = 0
 
+
 async def exec_nop(dut, count: int = 1):
-    nop = 0x00000013 # addi x0, x0, 0
+    nop = 0x00000013  # addi x0, x0, 0
     await exec_instr(dut, instruction=nop, count=count)
+
 
 @cocotb.test()
 async def test_r_add(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.tracing.trace_enable()
 
     rf = get_registerfile(dut)
     rf["x5"] = 0b0000_0110
     rf["x6"] = 0b0000_0101
     set_registerfile(dut, rf)
 
-    instr = 0x006283B3 # ADD x7, x5, x6
+    instr = 0x006283B3  # ADD x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -68,7 +75,10 @@ async def test_r_add(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_sub(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -78,7 +88,7 @@ async def test_r_sub(dut) -> None:
     rf["x6"] = 0b0000_0101
     set_registerfile(dut, rf)
 
-    instr = 0x406283b3 # SUB x7, x5, x6
+    instr = 0x406283b3  # SUB x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -89,7 +99,10 @@ async def test_r_sub(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_and(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -99,7 +112,7 @@ async def test_r_and(dut) -> None:
     rf["x6"] = 0b1001_1001
     set_registerfile(dut, rf)
 
-    instr = 0x0062f3b3 # AND x7, x5, x6
+    instr = 0x0062f3b3  # AND x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -110,7 +123,10 @@ async def test_r_and(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_or(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -120,7 +136,7 @@ async def test_r_or(dut) -> None:
     rf["x6"] = 0b1001_1001
     set_registerfile(dut, rf)
 
-    instr = 0x0062e3b3 # OR x7, x5, x6
+    instr = 0x0062e3b3  # OR x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -131,7 +147,10 @@ async def test_r_or(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_xor(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -141,7 +160,7 @@ async def test_r_xor(dut) -> None:
     rf["x6"] = 0b1001_1001
     set_registerfile(dut, rf)
 
-    instr = 0x0062c3b3 # XOR x7, x5, x6
+    instr = 0x0062c3b3  # XOR x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -152,7 +171,10 @@ async def test_r_xor(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_sll(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -162,7 +184,7 @@ async def test_r_sll(dut) -> None:
     rf["x6"] = 0b0000_0011
     set_registerfile(dut, rf)
 
-    instr = 0x006293B3 # SLL x7, x5, x6
+    instr = 0x006293B3  # SLL x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -173,7 +195,10 @@ async def test_r_sll(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_srl(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -183,7 +208,7 @@ async def test_r_srl(dut) -> None:
     rf["x6"] = 4
     set_registerfile(dut, rf)
 
-    instr = 0x0062D3B3 # SRL x7, x5, x6
+    instr = 0x0062D3B3  # SRL x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -194,7 +219,10 @@ async def test_r_srl(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_sra(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -203,7 +231,7 @@ async def test_r_sra(dut) -> None:
     rf["x6"] = 4
     set_registerfile(dut, rf)
 
-    instr = 0x4062D3B3 # SRA x7, x5, x6
+    instr = 0x4062D3B3  # SRA x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -214,7 +242,10 @@ async def test_r_sra(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_slt_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -223,7 +254,7 @@ async def test_r_slt_true(dut) -> None:
     rf["x6"] = +3
     set_registerfile(dut, rf)
 
-    instr = 0x0062a3b3 # SLT x7, x5, x6
+    instr = 0x0062a3b3  # SLT x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -234,7 +265,10 @@ async def test_r_slt_true(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_slt_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -243,7 +277,7 @@ async def test_r_slt_false(dut) -> None:
     rf["x6"] = -4
     set_registerfile(dut, rf)
 
-    instr = 0x0062a3b3 # SLT x7, x5, x6
+    instr = 0x0062a3b3  # SLT x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -254,7 +288,10 @@ async def test_r_slt_false(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_r_sltu_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -264,7 +301,7 @@ async def test_r_sltu_true(dut) -> None:
     rf["x6"] = 6
     set_registerfile(dut, rf)
 
-    instr = 0x0062b3b3 # SLTU x7, x5, x6
+    instr = 0x0062b3b3  # SLTU x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -275,7 +312,9 @@ async def test_r_sltu_true(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+
+cocotb.test()
 async def test_r_sltu_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -285,7 +324,7 @@ async def test_r_sltu_false(dut) -> None:
     rf["x6"] = 4
     set_registerfile(dut, rf)
 
-    instr = 0x0062b3b3 # SLTU x7, x5, x6
+    instr = 0x0062b3b3  # SLTU x7, x5, x6
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -296,7 +335,8 @@ async def test_r_sltu_false(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
 async def test_i_addi(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -305,7 +345,7 @@ async def test_i_addi(dut) -> None:
     rf["x5"] = 100
     set_registerfile(dut, rf)
 
-    instr = 0xc1828393 # ADDI x7, x5, -1000
+    instr = 0xc1828393  # ADDI x7, x5, -1000
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -316,7 +356,10 @@ async def test_i_addi(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_slti_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -325,7 +368,7 @@ async def test_i_slti_true(dut) -> None:
     rf["x5"] = -5
     set_registerfile(dut, rf)
 
-    instr = 0x0052a393 # SLTI x7, x5, +5
+    instr = 0x0052a393  # SLTI x7, x5, +5
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -336,7 +379,10 @@ async def test_i_slti_true(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_slti_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -345,7 +391,7 @@ async def test_i_slti_false(dut) -> None:
     rf["x5"] = 5
     set_registerfile(dut, rf)
 
-    instr = 0xffb2a393 # SLTI x7, x5, -5
+    instr = 0xffb2a393  # SLTI x7, x5, -5
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -356,7 +402,10 @@ async def test_i_slti_false(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_xori(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -365,7 +414,7 @@ async def test_i_xori(dut) -> None:
     rf["x5"] = 0b0101
     set_registerfile(dut, rf)
 
-    instr = 0x0032c393 # XORI x7, x5, 0b0011
+    instr = 0x0032c393  # XORI x7, x5, 0b0011
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -376,7 +425,10 @@ async def test_i_xori(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_ori(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -385,7 +437,7 @@ async def test_i_ori(dut) -> None:
     rf["x5"] = 0b0101
     set_registerfile(dut, rf)
 
-    instr = 0x0032e393 # ORI x7, x5, 0b0011
+    instr = 0x0032e393  # ORI x7, x5, 0b0011
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -396,7 +448,10 @@ async def test_i_ori(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_andi(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -405,7 +460,7 @@ async def test_i_andi(dut) -> None:
     rf["x5"] = 0b0101
     set_registerfile(dut, rf)
 
-    instr = 0x0032F393 # ANDI x7, x5, 0b0011
+    instr = 0x0032F393  # ANDI x7, x5, 0b0011
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -416,7 +471,10 @@ async def test_i_andi(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_slli(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -425,7 +483,7 @@ async def test_i_slli(dut) -> None:
     rf["x5"] = 0b0011
     set_registerfile(dut, rf)
 
-    instr = 0x00329393 # SLLI x7, x5, 3
+    instr = 0x00329393  # SLLI x7, x5, 3
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -436,7 +494,10 @@ async def test_i_slli(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_srli(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -445,7 +506,7 @@ async def test_i_srli(dut) -> None:
     rf["x5"] = 0xFFFF_FFFF
     set_registerfile(dut, rf)
 
-    instr = 0x0042d393 # SRLI x7, x5, 4
+    instr = 0x0042d393  # SRLI x7, x5, 4
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -456,7 +517,10 @@ async def test_i_srli(dut) -> None:
 
     await exec_nop(dut)
 
-@cocotb.test()
+
+cocotb.test()
+
+
 async def test_i_srai(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -465,7 +529,7 @@ async def test_i_srai(dut) -> None:
     rf["x5"] = 0xFFFF_FFFF
     set_registerfile(dut, rf)
 
-    instr = 0x4042D393 # SRAI x7, x5, 4
+    instr = 0x4042D393  # SRAI x7, x5, 4
     await exec_instr(dut, instr)
 
     rf = get_registerfile(dut)
@@ -475,6 +539,7 @@ async def test_i_srai(dut) -> None:
     assert 0xFFFF_FFFF == rf["x7"]
 
     await exec_nop(dut)
+
 
 def test_runner():
     import os
@@ -488,6 +553,7 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
@@ -508,9 +574,10 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
-    test_module = os.path.basename(__file__).replace(".py","")
+    test_module = os.path.basename(__file__).replace(".py", "")
     runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{test_module},",
                 waves=True, extra_env={"WAVES": "1"})
 

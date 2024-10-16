@@ -16,7 +16,6 @@ async def reset_dut(dut):
     dut.reset.value = 0
     await Timer(1, "ps")
 
-
 def get_registerfile(dut) -> dict[str, int]:
     ret: dict[str,intjkk] = {}
     for i, v in enumerate(dut.inst_registerfile.registerfile.value):
@@ -29,8 +28,8 @@ def set_registerfile(dut, values: dict[str, int]):
 
 def get_pc(dut) -> dict[str, int]:
     return {
-        "current":dut.pc_current.value,
-        "next"   :dut.pc_next.value
+        "current": dut.pc_current.value,
+        "next"   : dut.pc_next.value
     }
 
 async def exec_instr(dut, instruction: int, count: int = 1):
@@ -97,6 +96,7 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
@@ -117,6 +117,7 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
     test_module = os.path.basename(__file__).replace(".py","")

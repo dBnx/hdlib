@@ -22,8 +22,9 @@ typedef enum bit [1:0] {
 
 typedef bit [1:0] wb_source_t;
 `define WB_SOURCE_ALU 0
-`define WB_SOURCE_PC 1
+`define WB_SOURCE_PC  1
 `define WB_SOURCE_LSU 2
+`define WB_SOURCE_CSR 3
 
 typedef bit [2:0] br_condition_t;
 `define BR_COND_NOP 0
@@ -35,21 +36,31 @@ typedef bit [2:0] br_condition_t;
 `define BR_COND_LE 6
 
 module rv32_mod_instruction_decoder_func (
-    input  logic      [ 5:0] instruction_format,  // or opcode?
-    input  logic      [ 5:0] func,
-    input  logic      [ 0:0] is_mem_or_io,
+    input  bit        [ 5:0] instruction_format,  // or opcode?
+    input  bit        [ 5:0] func,
+    input  bit               is_mem_or_io,
+    input  bit               is_system,
+    input  bit               rf_target_is_x0,
+    input  bit               rf_source_is_x0,
 
-    output logic             rf_write0_enable,
-    output logic             alu_op0_use_pc,
-    output logic             alu_op1_use_imm,
-    output logic      [ 4:0] alu_func,
-    output logic      [ 3:0] ram_req,
-    output logic             ram_wr,
-    output wb_source_t       wb_source,
+    output bit               rf_write0_enable,
+    output bit               alu_op0_use_pc,
+    output bit               alu_op1_use_imm,
+    output bit        [ 4:0] alu_func,
+    output bit        [ 3:0] ram_req,
+    output bit               ram_wr,
+    output wb_source_t       wb_source, // TODO: Output _CSR
+
+    output bit               csr_wr, // TODO
+    output bit               csr_rd, // TODO
+    output bit               csr_bit_op,
+    output bit               csr_bit_set_or_clr,
+    output bit               csr_use_imm,
 
     output br_condition_t    br_cond,
-    output logic             br_is_cond,
-    output logic             br_jmp
+    output bit               br_is_cond,
+    output bit               br_jmp,
+    output bit               error
 );
   // {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j};
 
@@ -66,6 +77,8 @@ module rv32_mod_instruction_decoder_func (
   bit is_jalr;
   assign is_jalr = func[5];
 
+  // bit is_system;
+  // assign is_system = func == 5'b11100;
 
   always_comb begin
     rf_write0_enable = 0;
@@ -74,32 +87,47 @@ module rv32_mod_instruction_decoder_func (
     alu_func = {1'b0, `ALU_OP_ADD};
     ram_req = 0;
     ram_wr = 0;
+    csr_wr = 0;
+    csr_rd = 0;
     wb_source = `WB_SOURCE_ALU;
 
     br_cond = 0;
     br_is_cond = 0;
     br_jmp = 0;
 
+    error = 0;
+
     case (instruction_format)
       6'b100000: begin  // R Type
         rf_write0_enable = 1;
         alu_func = func[4:0];
       end
-      6'b010000: begin  // I Type - Op or Loads! // TODO: Impl load
+      6'b010000: begin  // I Type - Op, Loads or all CSR*
         rf_write0_enable = 1;
         alu_op1_use_imm  = 1;
         if (is_mem_or_io) begin
+          // ALU Func must be ALU_OP_ADD
           wb_source    = `WB_SOURCE_LSU;
-          // alu_func[3:0]  = `ALU_OP_ADD;  // TODO: Handle addressing somehow
           ram_req[2:0] = func[2:0];  // Width and signed-ness
         end else if (is_jalr) begin
           rf_write0_enable = 1;
           alu_op1_use_imm = 1;
           br_jmp = 1;
           wb_source = `WB_SOURCE_PC;
+        end else if (is_system) begin
+          // TODO: Still use func3 somewhere
+          rf_write0_enable = 1;
+          alu_op1_use_imm = 1;
+          wb_source = `WB_SOURCE_CSR;
+          csr_wr = !rf_source_is_x0; // TODO: Check behaviour
+          csr_rd = !rf_target_is_x0; // TODO: Check behaviour
         end else begin
           alu_func = func[4:0];
         end
+
+        // TODO: csr_* and 
+        // wb_source    = `WB_SOURCE_CSR;
+        // if
       end
       6'b001000: begin  // S Type - Store
         alu_op1_use_imm = 1;
@@ -127,6 +155,7 @@ module rv32_mod_instruction_decoder_func (
         wb_source = `WB_SOURCE_PC;
       end
       default: begin
+        error = 1; // TODO: Not sure about this one
       end
     endcase
   end

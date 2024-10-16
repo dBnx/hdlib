@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 
 module rv32_mod_instruction_decoder_imm (
-    input  logic [31:0] instruction,
-    input  logic [ 5:0] instruction_format,
+    input  bit [31:0] instruction,
+    input  bit [ 5:0] instruction_format,
 
-    output logic [31:0] immediate
+    output bit [31:0] immediate
 );
   bit is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j;
   assign {is_r_type, is_i_type, is_s_type, is_s_subtype_b, is_u_type, is_u_subtype_j} = instruction_format;
@@ -26,7 +26,7 @@ module rv32_mod_instruction_decoder_imm (
   assign imm_7 = instruction[7];
 
   // Helper
-  bit is_u_not_j;
+  bit         is_u_not_j;
   assign is_u_not_j = is_u_type && !is_u_subtype_j;
 
   // Sign extension

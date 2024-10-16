@@ -14,16 +14,20 @@
 `define OP_SYSTEM    5'b11100 // I
 
 module rv32_mod_instruction_decoder (
-    input  logic [31:0] instruction,
+    input  bit [31:0] instruction,
 
-    output logic [ 4:0] rf_read0_index,
-    output logic [ 4:0] rf_read1_index,
-    output logic [ 4:0] rf_write0_index,
+    output bit [ 4:0] rf_read0_index,
+    output bit [ 4:0] rf_read1_index,
+    output bit [ 4:0] rf_write0_index,
+    output bit        rf_target_is_x0,
+    output bit        rf_source_is_x0,
 
-    output logic [ 5:0] instruction_format,
-    output logic [ 5:0] func,
-    output logic        is_mem_or_io,
-    output logic        is_compressed
+    output bit [ 5:0] instruction_format,
+    output bit [ 5:0] func,
+    output bit        is_mem_or_io,
+    output bit        is_system,
+    output bit        is_compressed,
+    output bit        error
 );
     bit [6:0] opcode;
     assign opcode = instruction[6:0];
@@ -43,6 +47,8 @@ module rv32_mod_instruction_decoder (
     assign rf_write0_index = is_s_type ? 0 : rd;
     assign instruction_format = {is_r_type, is_i_type, is_s_type, is_s_subtype_b,
                                  is_u_type, is_u_subtype_j};
+    assign rf_target_is_x0 = rd == 0;
+    assign rf_source_is_x0 = rs1 == 0;
 
     // Subtypes change immediate value encoding
     bit is_u_subtype_j;
@@ -89,7 +95,9 @@ module rv32_mod_instruction_decoder (
         is_u_subtype_j = 0;
         is_s_subtype_b = 0;
         is_mem_or_io = 0;
+        is_system = 0;
         promote_priviledge_m = 0;
+        error = 0;
 
         if( !is_compressed ) begin
             case(opcode[6:2])
@@ -127,6 +135,7 @@ module rv32_mod_instruction_decoder (
                     // is_i_type = 1;
                 end
                 `OP_SYSTEM  : begin
+                    is_system = 1;
                     // I
                     // ECALL (0), EBREAK (1)
                     is_i_type = 1;
@@ -135,7 +144,9 @@ module rv32_mod_instruction_decoder (
                     // Depending on the type rs1 == x0 has different effects.
                     // is_weird_type = 1;
                 end
-                default: begin end
+                default: begin 
+                    error = 1;
+                end
             endcase
         end
     end

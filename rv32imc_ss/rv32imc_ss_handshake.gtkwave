@@ -1,20 +1,20 @@
 [*]
-[*] GTKWave Analyzer v3.3.118 (w)1999-2023 BSI
-[*] Mon Jun 10 17:28:26 2024
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Wed Oct 16 18:50:32 2024
 [*]
-[dumpfile] "/home/dave/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Mon Jun 10 17:25:41 2024"
-[dumpfile_size] 15956
-[savefile] "/home/dave/hdlib/rv32imc_ss/rv32imc_ss_handshake.gtkwave"
+[dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
+[dumpfile_mtime] "Wed Oct 16 18:48:47 2024"
+[dumpfile_size] 25649
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake.gtkwave"
 [timestart] 0
-[size] 1920 1001
-[pos] 337 298
-*-13.300000 11850 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1920 1033
+[pos] 2257 266
+*-13.300000 35140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
 [signals_width] 399
 [sst_expanded] 1
-[sst_vpaned_height] 213
+[sst_vpaned_height] 173
 @22
 rv32imc_ss_handshake.INITIAL_GP[31:0]
 rv32imc_ss_handshake.INITIAL_SP[31:0]
@@ -36,7 +36,7 @@ rv32imc_ss_handshake.immediate[31:0]
 @28
 [color] 7
 rv32imc_ss_handshake.if_valid
-@22
+@23
 [color] 1
 rv32imc_ss_handshake.if_instruction[31:0]
 @200
@@ -67,9 +67,6 @@ rv32imc_ss_handshake.pc_overwrite_enable
 @22
 [color] 7
 rv32imc_ss_handshake.pc_overwrite_data[31:0]
-@28
-[color] 7
-rv32imc_ss_handshake.pc_stall
 @200
 -Registerfile
 @28
@@ -107,19 +104,19 @@ rv32imc_ss_handshake.alu_op1_use_imm
 @22
 [color] 7
 rv32imc_ss_handshake.alu_read0_data[31:0]
-@421
+@420
 [color] 5
 rv32imc_ss_handshake.alu_read0_data[31:0]
 @22
 [color] 7
 rv32imc_ss_handshake.alu_read1_data[31:0]
-@421
+@420
 [color] 5
 rv32imc_ss_handshake.alu_read1_data[31:0]
 @22
 [color] 7
 rv32imc_ss_handshake.alu_result[31:0]
-@421
+@420
 [color] 5
 rv32imc_ss_handshake.alu_result[31:0]
 @200
@@ -142,5 +139,29 @@ rv32imc_ss_handshake.data_be[3:0]
 rv32imc_ss_handshake.data_addr[31:0]
 rv32imc_ss_handshake.data_data_i[31:0]
 rv32imc_ss_handshake.data_data_o[31:0]
+@200
+-CSR
+@28
+rv32imc_ss_handshake.csr_rd
+rv32imc_ss_handshake.csr_wr
+rv32imc_ss_handshake.csr_use_imm
+rv32imc_ss_handshake.csr_error
+@22
+rv32imc_ss_handshake.csr_addr[11:0]
+rv32imc_ss_handshake.csr_data_i[31:0]
+rv32imc_ss_handshake.csr_data_o[31:0]
+@28
+rv32imc_ss_handshake.csr_bit_op
+rv32imc_ss_handshake.csr_bit_set_or_clr
+@22
+rv32imc_ss_handshake.csr_bit_shift[3:0]
+rv32imc_ss_handshake.csr_bitmask[31:0]
+rv32imc_ss_handshake.csr_bitmask_inversion[31:0]
+rv32imc_ss_handshake.csr_data_i_bitmanip[31:0]
+@200
+-Internal - CSR
+@22
+rv32imc_ss_handshake.inst_csrs.csr_mcycle[63:0]
+rv32imc_ss_handshake.inst_csrs.csr_mscratch[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

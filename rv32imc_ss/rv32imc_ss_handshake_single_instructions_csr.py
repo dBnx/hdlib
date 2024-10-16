@@ -49,28 +49,97 @@ async def exec_nop(dut, count: int = 1):
     await exec_instr(dut, instruction=nop, count=count)
 
 @cocotb.test()
-async def todo(dut) -> None:
+async def test_csrrw_mscratch(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await reset_dut(dut)
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0x0000_1234 # Dst
+    rf["x6"] = 0xCAFE_BABE # Src
+    set_registerfile(dut, rf)
+
+    dut.inst_csrs.csr_mscratch.value = 0xDEAD_BEEF
+
+    # Atomic read & write
     await Timer(1, "ps")
-
-    instr = 0xfffff2b7 # LUI x5, -1
+    instr = 0x340312f3 # csrrw t0, mscratch, t1
     await exec_instr(dut, instr)
-    assert (-1 << 12) & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    
+    await Timer(1, "ns")
+    rf = get_registerfile(dut)
+    assert 0xDEAD_BEEF == rf["x5"]
+    assert 0xCAFE_BABE == rf["x6"] # Unchanged
+    assert 0xCAFE_BABE == dut.inst_csrs.csr_mscratch.value
 
-    instr = 0xffc182b7 # LUI x5, -1000
+    # Only read
+    rf = get_registerfile(dut)
+    rf["x5"] = 0x0000_0001 # Dst: Reset to check
+    rf["x6"] = 0x0000_0002 # Src
+    set_registerfile(dut, rf)
+
+    await Timer(1, "ps")
+    instr = 0x340012f3 # csrrw t0, mscratch, zero
     await exec_instr(dut, instr)
-    assert (-1000 << 12) & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    
+    await Timer(1, "ns")
+    rf = get_registerfile(dut)
+    assert 0xCAFE_BABE == rf["x5"]
+    assert 0x0000_0002 == rf["x6"] # Unchanged
+    assert 0xCAFE_BABE == dut.inst_csrs.csr_mscratch.value # Unchanged
+
+    # Only write
+    rf = get_registerfile(dut)
+    rf["x5"] = 0x0000_DEAD # Dst: Reset to check
+    rf["x6"] = 0x1234_5678 # Src
+    set_registerfile(dut, rf)
+
+    await Timer(1, "ps")
+    instr = 0x34031073 # csrrw zero, mscratch, t1
+    await exec_instr(dut, instr)
+    
+    await Timer(1, "ns")
+    rf = get_registerfile(dut)
+    assert 0x0000_DEAD == rf["x5"]
+    assert 0x1234_5678 == rf["x6"] # Unchanged
+    assert 0x1234_5678 == dut.inst_csrs.csr_mscratch.value
 
     exec_nop(dut)
 
-# TODO: Missing "system" instructions 
-# FENCE
-# FENCE.TSO
-# PAUSE
-# ECALL
-# BREAK
-#
-# CSR
+@cocotb.test()
+async def test_csrrw_mcycle(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await reset_dut(dut)
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0
+    set_registerfile(dut, rf)
+
+    # Read only & let it increase
+    await Timer(1, "ps")
+    instr = 0xb00012f3 # csrrw t0, mcycle, zero
+    await exec_instr(dut, instr)
+    assert 0 == get_registerfile(dut)["x5"]
+    await exec_instr(dut, instr)
+    assert 1 == get_registerfile(dut)["x5"]
+    await exec_instr(dut, instr)
+    assert 2 == get_registerfile(dut)["x5"]
+    await exec_instr(dut, instr)
+    assert 3 == get_registerfile(dut)["x5"]
+
+    # TODO:
+    # - Write
+    # - Overflow & mcycleh
+
+    exec_nop(dut)
+
+
+# TODO: Missing instructions 
+# CSRS
+# CSRC
+# CSRWI
+# CSRSI
+# CSRCI
+# .. and more complex registers
 
 def test_runner():
     import os
@@ -84,12 +153,14 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
         project_path / "rv32_mod_pc.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",
         project_path / f"{hdl_toplevel}.sv",
@@ -104,6 +175,7 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
     test_module = os.path.basename(__file__).replace(".py","")
