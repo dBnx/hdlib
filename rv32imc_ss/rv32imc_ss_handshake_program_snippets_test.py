@@ -393,7 +393,7 @@ async def test_store_load(dut):
     # initial_x5 = get_registerfile(dut)["x5"]
     program_runner = cocotb.start_soon(run_program(dut, program))
 
-    timeout = ClockCycles(dut.clk, 30)
+    timeout = ClockCycles(dut.clk, 64)
     await First(program_runner, timeout)
     await Timer(2, "ns")
 

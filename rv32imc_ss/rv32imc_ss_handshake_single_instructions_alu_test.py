@@ -57,7 +57,6 @@ async def exec_nop(dut, count: int = 1):
 @cocotb.test()
 async def test_r_add(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    cocotb.tracing.trace_enable()
 
     rf = get_registerfile(dut)
     rf["x5"] = 0b0000_0110
@@ -148,9 +147,7 @@ async def test_r_or(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_xor(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -172,9 +169,7 @@ async def test_r_xor(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_sll(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -197,8 +192,6 @@ async def test_r_sll(dut) -> None:
 
 
 cocotb.test()
-
-
 async def test_r_srl(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -220,9 +213,7 @@ async def test_r_srl(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_sra(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -243,9 +234,7 @@ async def test_r_sra(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_slt_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -266,9 +255,7 @@ async def test_r_slt_true(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_slt_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -289,9 +276,7 @@ async def test_r_slt_false(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_r_sltu_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -314,7 +299,7 @@ async def test_r_sltu_true(dut) -> None:
 
 
 
-cocotb.test()
+@cocotb.test()
 async def test_r_sltu_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -335,9 +320,48 @@ async def test_r_sltu_false(dut) -> None:
 
     await exec_nop(dut)
 
+@cocotb.test()
+async def test_i_addi_pimm_pres(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
 
-cocotb.test()
-async def test_i_addi(dut) -> None:
+    rf = get_registerfile(dut)
+    rf["x5"] = 1001
+    set_registerfile(dut, rf)
+
+    instr = 0x3e828393 # ADDI x7, x5, +1000
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert hex(2001) == hex(rf["x7"])
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_addi_nimm_pres(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 1001
+    set_registerfile(dut, rf)
+
+    instr = 0xc1828393  # ADDI x7, x5, -1000
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert hex(1) == hex(rf["x7"])
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_addi_nimm_nres(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
@@ -352,14 +376,12 @@ async def test_i_addi(dut) -> None:
     await FallingEdge(dut.clk)
     await RisingEdge(dut.clk)
 
-    assert -900 & 0xFFFF_FFFF == rf["x7"]
+    assert hex(-900 & 0xFFFF_FFFF) == hex(rf["x7"])
 
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_slti_true(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -380,9 +402,7 @@ async def test_i_slti_true(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_slti_false(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -403,9 +423,7 @@ async def test_i_slti_false(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_xori(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -426,9 +444,7 @@ async def test_i_xori(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_ori(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -449,9 +465,7 @@ async def test_i_ori(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_andi(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -472,9 +486,7 @@ async def test_i_andi(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_slli(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -495,9 +507,7 @@ async def test_i_slli(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_srli(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -518,9 +528,7 @@ async def test_i_srli(dut) -> None:
     await exec_nop(dut)
 
 
-cocotb.test()
-
-
+@cocotb.test()
 async def test_i_srai(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
@@ -540,6 +548,47 @@ async def test_i_srai(dut) -> None:
 
     await exec_nop(dut)
 
+@cocotb.test()
+async def test_i_mul(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0x0001_0002
+    rf["x6"] = 0x2000_0000
+    set_registerfile(dut, rf)
+
+    instr = 0x026283b3 # mul t2, t0, t1
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert hex(0x4000_0000) == hex(rf["x7"])
+
+    await exec_nop(dut)
+
+@cocotb.test()
+async def test_i_mulh(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf = get_registerfile(dut)
+    rf["x5"] = 0x0001_0002
+    rf["x6"] = 0x2000_0000
+    set_registerfile(dut, rf)
+
+    instr = 0x026293b3 # mulh t2, t0, t1
+    await exec_instr(dut, instr)
+
+    rf = get_registerfile(dut)
+    await FallingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    assert hex(0x0000_2000) == hex(rf["x7"])
+
+    await exec_nop(dut)
 
 def test_runner():
     import os
@@ -559,6 +608,7 @@ def test_runner():
         project_path / "rv32_mod_instruction_decoder_imm.sv",
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_pc.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",

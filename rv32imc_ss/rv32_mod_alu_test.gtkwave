@@ -1,0 +1,45 @@
+[*]
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Sun Oct 20 13:41:17 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32_mod_alu/dump.vcd"
+[dumpfile_mtime] "Sun Oct 20 13:33:19 2024"
+[dumpfile_size] 4870
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32_mod_alu_test.gtkwave"
+[timestart] 0
+[size] 1920 1001
+[pos] -1921 31
+*-2.100000 14 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 308
+[sst_expanded] 1
+[sst_vpaned_height] 270
+@200
+-Input
+@28
+rv32_mod_alu.force_add
+rv32_mod_alu.funct3[2:0]
+@22
+rv32_mod_alu.funct7[6:0]
+rv32_mod_alu.operation[5:0]
+rv32_mod_alu.read0_data[31:0]
+rv32_mod_alu.read1_data[31:0]
+@200
+-Output
+@28
+rv32_mod_alu.error
+@22
+rv32_mod_alu.result[31:0]
+@200
+-Internal
+@29
+[color] 1
+rv32_mod_alu.is_int
+[color] 2
+rv32_mod_alu.is_int_alt
+[color] 3
+rv32_mod_alu.is_muldiv
+@22
+rv32_mod_alu.result_muls[63:0]
+[pattern_trace] 1
+[pattern_trace] 0

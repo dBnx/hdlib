@@ -88,20 +88,24 @@ module rv32_mod_csrs #(
     parameter logic [31:0] MIMP_ID = 32'h00000000,
     parameter logic [31:0] MHART_ID = 32'h00000000
 ) (
-    input  logic clk,
-    input  logic reset,
+    input  bit clk,
+    input  bit reset,
 
-    input  logic [1:0] priviledge,
+    input  bit [1:0] priviledge,
+    input  bit       instruction_retired,
 
     // <<<< Register file I/O >>>>
-    input  logic wr,
-    input  logic rd,
-    output logic error,
-    input  logic [11:0] addr,
-    input  logic [31:0] data_i,
-    output logic [31:0] data_o,
+    input  bit        wr,
+    input  bit        rd,
+    output bit        error,
+    input  bit [11:0] addr,
+    input  bit [31:0] data_i,
+    output bit [31:0] data_o,
 
     // <<<< TRAPS >>>>
+    input  bit        sys_jump_to_m,
+    input  bit        sys_ret_from_priv,
+
     input  logic [31:0] mip_new,
     output logic [31:0] mip_cur,
 
@@ -126,11 +130,13 @@ module rv32_mod_csrs #(
     input  logic exception_store_page_fault,
 
     // New signals for assigning to csr_mepc and csr_mtval
-    input  logic [31:0] current_pc,
+    input  logic [31:0] pc_current,
+    input  logic [31:0] pc_next,
     input  logic [31:0] faulting_address,
     input  logic [31:0] faulting_instruction,
 
-    output logic serve_trap,
+    output bit        serve_trap,
+    output bit [31:0] trap_handler_addr,
 
     // <<<< CSRs direct access >>>>
     output logic [31:0] mstatus,
@@ -219,6 +225,26 @@ module rv32_mod_csrs #(
     // TODO: Check WARL and WLRL constraints.
     //       mstatus shifts bits around with each trap
 
+    initial begin
+        csr_mtvec   = INITIAL_MTVEC;
+        csr_mstatus = INITIAL_MSTATUS;
+    end
+    // CSR updates for mtime and mcycle
+    /*
+	 always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            csr_mtime <= 0;
+            csr_mcycle <= 0;
+        end else begin
+            csr_mtime <= csr_mtime + 1;
+            csr_mcycle <= csr_mcycle + 1;
+        end
+    end
+	 */
+	 
+	 bit        m_wr;
+     bit [31:0] csr_mcause_next, csr_mtval_next;
+	 assign m_wr = wr && priviledge == 2'b11;
     // Initialize CSRs on reset
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -235,25 +261,44 @@ module rv32_mod_csrs #(
             error        <= 1'b0;
         end else begin
             // CSR writes
-            if (wr && priviledge == 2'b11) begin  // Machine mode check
+            if(serve_trap) begin
+                csr_mepc <= pc_current;
+            end else if (m_wr && addr == 12'h341) begin
+                csr_mepc <= data_i;
+            end
+
+            if (m_wr) begin  // Machine mode check
                 case (addr)
                     12'h304: csr_mie      <= data_i;
                     12'h305: csr_mtvec    <= data_i;
                     12'h300: csr_mstatus  <= data_i;
                     12'h340: csr_mscratch <= data_i;
-                    12'h341: csr_mepc     <= data_i;
                     12'h343: csr_mtval    <= data_i;
                     12'h344: csr_mip      <= data_i;
-                    12'h701: csr_mtime[31:0]   <= data_i;
-                    12'h702: csr_mtime[63:32]  <= data_i;
-                    12'hB00: csr_mcycle[31:0]  <= data_i;
-                    12'hB02: csr_mcycle[63:32] <= data_i; // TODO: Check address(es)
-                    default: error             <= 1'b1;  // Invalid CSR access
+                    12'h701: csr_mtime[31:0]     <= data_i;
+                    12'h702: csr_mtime[63:32]    <= data_i;
+                    12'hB02: csr_minstret[31:0]  <= data_i;
+                    12'hB82: csr_minstret[63:32] <= data_i;
+                    12'hB00: csr_mcycle[31:0]    <= data_i;
+                    12'hB80: csr_mcycle[63:32]   <= data_i; // TODO: Check address(es)
+                    default: error               <= 1'b1;   // Invalid CSR access
                 endcase
-            end else if (wr && priviledge == 2'b11) begin  // Other modes
+            end else if (wr && priviledge == 2'b11) begin   // Other modes
                 error <= 1'b1;
             end else begin
                 error <= 1'b0;
+            end
+
+            // TODO: mepc should actually point to the faulting instruction / pc_current?
+            // csr_mepc   <= pc_current;
+            csr_mcause <= csr_mcause_next;
+            csr_mtval  <= csr_mtval_next;
+            
+            csr_mtime <= csr_mtime + 1;
+            csr_mcycle <= csr_mcycle + 1;
+				
+            if (wr && priviledge == 2'b11 && instruction_retired) begin
+                csr_minstret <= csr_minstret + 1;
             end
         end
     end
@@ -263,7 +308,7 @@ module rv32_mod_csrs #(
     //     if (reset) begin
     //         data_o  <= 32'h00000000;
     //     end else begin
-    always_comb begin
+    always_comb begin : read_from_csrs
         if (rd) begin
             case (addr)
                 // <<< Machine Trap Setup >>>
@@ -284,8 +329,8 @@ module rv32_mod_csrs #(
                 12'hB80: data_o = csr_mcycle[63:32];
                 12'hC01: data_o = csr_mtime[31:0];
                 12'hC81: data_o = csr_mtime[63:32];
-                12'hC02: data_o = csr_minstret[31:0];
-                12'hC82: data_o = csr_minstret[63:32];
+                12'hB02: data_o = csr_minstret[31:0];
+                12'hB82: data_o = csr_minstret[63:32];
                 // <<< Machine information >>>
                 12'hF11: data_o = MVENDOR_ID;
                 12'hF12: data_o = MARCH_ID;
@@ -299,24 +344,80 @@ module rv32_mod_csrs #(
     end
 
     // TODO: Mixup between faulting address and faulting instruction
-    // Exceptions are HART internal and therefore bounded. Interrupts go through MIP
-    assign serve_trap =    exception_instr_addr_misaligned
-                        || exception_instr_access_fault
-                        || exception_illegal_instruction
-                        || exception_breakpoint
-                        || exception_load_addr_misaligned
-                        || exception_load_access_fault
-                        || exception_store_addr_misaligned
-                        || exception_store_access_fault
-                        || exception_ecall_from_u_mode
-                        || exception_ecall_from_s_mode
-                        || exception_ecall_from_m_mode
-                        || exception_instr_page_fault
-                        || exception_load_page_fault
-                        || exception_store_page_fault;
 
+
+    always_comb begin : set_exception_info
+        csr_mtval_next = 32'h00000000;
+        csr_mcause_next = csr_mcause;
+
+        if (exception_instr_addr_misaligned) begin
+            csr_mcause_next = 32'h00000000;
+            csr_mtval_next = faulting_address;
+        end else if (exception_instr_access_fault) begin
+            csr_mcause_next = 32'h00000001;
+            csr_mtval_next = faulting_address;
+        end else if (exception_illegal_instruction) begin
+            csr_mcause_next = 32'h00000002;
+            csr_mtval_next = faulting_instruction;
+        /*
+        end else if (exception_breakpoint) begin
+            csr_mcause_next = 32'h00000003;
+            csr_mtval_next = faulting_address;
+        end else if (exception_load_addr_misaligned) begin
+            csr_mcause_next = 32'h00000004;
+            csr_mtval_next = faulting_address;
+        end else if (exception_load_access_fault) begin
+            csr_mcause_next = 32'h00000005;
+            csr_mtval_next = faulting_address;
+        end else if (exception_store_addr_misaligned) begin
+            csr_mcause_next = 32'h00000006;
+            csr_mtval_next = faulting_address;
+        end else if (exception_store_access_fault) begin
+            csr_mcause_next = 32'h00000007;
+            csr_mtval_next = faulting_address;
+        end else if (exception_ecall_from_u_mode) begin
+            csr_mcause_next = 32'h00000008;
+            csr_mtval_next = 32'h00000000;
+        end else if (exception_ecall_from_s_mode) begin
+            csr_mcause_next = 32'h00000009;
+            csr_mtval_next = 32'h00000000;  // No specific faulting address
+        */
+        end else if (exception_ecall_from_m_mode) begin
+            csr_mcause_next = 32'h0000000B;
+            csr_mtval_next = 32'h00000000;  // No specific faulting address
+        /*
+        end else if (exception_instr_page_fault) begin
+            csr_mcause_next = 32'h0000000C;
+            csr_mtval_next = faulting_address;
+        end else if (exception_load_page_fault) begin
+            csr_mcause_next = 32'h0000000D;
+            csr_mtval_next = faulting_address;
+        end else if (exception_store_page_fault) begin
+            csr_mcause_next = 32'h0000000F;
+            csr_mtval_next = faulting_address;
+        end else if (interrupt_nmi) begin
+            // TODO: Handle interrupt-specifics
+            // Set mcause
+            csr_mcause_next = 32'h8000000B; // Only for M External
+        end else if (interrupts != 0 && mie_meie) begin
+            // Platform specific interrupts
+            // TODO: Handle interrupt-specifics
+            // Set mcause
+            csr_mcause_next = 32'h80000010 + int'(interrupts); // Only for M External
+        end else if (timer_overflow) begin
+            // TODO: Handle interrupt-specifics
+            // Set mcause
+            csr_mcause_next = 32'h8000000D; // Only for M External
+        end else if (timer_interrupt && mie_mtie) begin
+            // TODO: Handle interrupt-specifics
+            // Set mcause
+            csr_mcause_next = 32'h80000007; // Only for M External
+        */
+        end
+    end
 
     // Trap handling logic
+	 /*
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             csr_mcause <= 32'h00000000;
@@ -404,19 +505,55 @@ module rv32_mod_csrs #(
             end
         end
     end
+	 */
 
-    // CSR updates for mtime and mcycle
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            csr_mtime <= 0;
-            csr_mcycle <= 0;
+
+    // Sync Trap Taken ---------------------------------
+
+    // Exceptions are HART internal and therefore bounded. Interrupts go through MIP
+    assign serve_trap =    exception_instr_addr_misaligned
+                        || exception_instr_access_fault
+                        || exception_illegal_instruction
+                        || exception_breakpoint
+                        || exception_load_addr_misaligned
+                        || exception_load_access_fault
+                        || exception_store_addr_misaligned
+                        || exception_store_access_fault
+                        || exception_ecall_from_u_mode
+                        || exception_ecall_from_s_mode
+                        || exception_ecall_from_m_mode
+                        || exception_instr_page_fault
+                        || exception_load_page_fault
+                        || exception_store_page_fault;
+
+    bit [1:0] trap_mode;
+    bit [31:0] trap_handler_addr_base, trap_handler_addr_offset;
+    assign trap_handler_addr_base = {csr_mtvec[31:2], 2'b00};
+    assign trap_mode = csr_mtvec[1:0];
+
+    always_comb begin
+        double_fault = 0;
+        if(trap_mode == 2'b01) begin
+            // Vectored mode
+            trap_handler_addr = trap_handler_addr_base + trap_handler_addr_offset;
+        end else if(trap_mode == 2'b01) begin
+            // Direct Mode (Or invalid configuration)
+            trap_handler_addr = trap_handler_addr_base;
         end else begin
-            csr_mtime <= csr_mtime + 1;
-            csr_mcycle <= csr_mcycle + 1;
+            // ERROR: Invalid mode (reserved)
+            double_fault = 1;
+            trap_handler_addr = trap_handler_addr_base;
         end
     end
 
-    // Output CSRs
+    always_comb begin
+        // TODO: Implement offset
+        trap_handler_addr_offset = 0; // csr_mcause[29:0];
+    end
+
+    bit double_fault; // TODO: Do something with it
+
+    // Output CSRs -------------------------------------
     assign mstatus  = csr_mstatus;
     assign mepc     = csr_mepc;
     assign mtval    = csr_mtval;

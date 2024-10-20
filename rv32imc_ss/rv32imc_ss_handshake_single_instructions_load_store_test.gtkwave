@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Wed Oct  9 10:54:06 2024
+[*] Sun Oct 20 20:03:58 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake/dump.vcd"
-[dumpfile_mtime] "Wed Oct  9 10:53:53 2024"
-[dumpfile_size] 28477
+[dumpfile_mtime] "Sun Oct 20 19:51:49 2024"
+[dumpfile_size] 45106
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_single_instructions_load_store_test.gtkwave"
 [timestart] 0
-[size] 1920 1001
-[pos] 103 91
-*-15.000000 47020 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1920 1033
+[pos] 2023 59
+*-15.000001 23700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake.
 [sst_width] 273
-[signals_width] 316
+[signals_width] 355
 [sst_expanded] 1
-[sst_vpaned_height] 207
+[sst_vpaned_height] 333
 @22
 rv32imc_ss_handshake.INITIAL_GP[31:0]
 rv32imc_ss_handshake.INITIAL_SP[31:0]
@@ -61,20 +61,41 @@ rv32imc_ss_handshake.data_data_o[31:0]
 rv32imc_ss_handshake.data_data_i[31:0]
 @200
 -Internal
-@22
-rv32imc_ss_handshake.alu_func[4:0]
+-ALU - Internal
 @28
-rv32imc_ss_handshake.alu_op0_use_pc
-rv32imc_ss_handshake.alu_op1_use_imm
+rv32imc_ss_handshake.alu_error
+rv32imc_ss_handshake.alu_force_add
+rv32imc_ss_handshake.alu_funct7[6:0]
+rv32imc_ss_handshake.alu_funct3[2:0]
 @22
 rv32imc_ss_handshake.alu_read0_data[31:0]
 rv32imc_ss_handshake.alu_read1_data[31:0]
 rv32imc_ss_handshake.alu_result[31:0]
 @28
+rv32imc_ss_handshake.alu_op0_use_pc
+rv32imc_ss_handshake.alu_op1_use_imm
+@200
+-BR - Internal
+@28
 rv32imc_ss_handshake.br_cond[2:0]
 rv32imc_ss_handshake.br_is_cond
 rv32imc_ss_handshake.br_is_jmp
 rv32imc_ss_handshake.branch_taken
+@200
+-ID - Internal
+@28
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_r_type
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_i_type
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_s_type
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_s_subtype_b
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_u_type
+[color] 2
+rv32imc_ss_handshake.inst_instr_dec.is_u_subtype_j
 @22
 rv32imc_ss_handshake.func[5:0]
 rv32imc_ss_handshake.id_instruction_format[5:0]
@@ -88,9 +109,8 @@ rv32imc_ss_handshake.is_compressed
 rv32imc_ss_handshake.is_mem_or_io
 @200
 -LSU - Internal
-@29
-rv32imc_ss_handshake.inst_lsu.req_active
 @28
+rv32imc_ss_handshake.inst_lsu.req_active
 [color] 3
 rv32imc_ss_handshake.lsu_error
 [color] 3
@@ -108,12 +128,17 @@ rv32imc_ss_handshake.lsu_address[31:0]
 rv32imc_ss_handshake.lsu_data_o[31:0]
 [color] 3
 rv32imc_ss_handshake.lsu_req_type[3:0]
+@200
+-PC - Internal
+@22
 rv32imc_ss_handshake.pc_current[31:0]
 rv32imc_ss_handshake.pc_next[31:0]
 rv32imc_ss_handshake.pc_overwrite_data[31:0]
 @28
 rv32imc_ss_handshake.pc_overwrite_enable
-rv32imc_ss_handshake.pc_stall
+rv32imc_ss_handshake.trap_taken
+@200
+-RF - Internal
 @22
 rv32imc_ss_handshake.rf_read0_data[31:0]
 rv32imc_ss_handshake.rf_read0_index[4:0]
@@ -131,6 +156,79 @@ rv32imc_ss_handshake.wb_source[1:0]
 @28
 rv32imc_ss_handshake.lsu_stall
 rv32imc_ss_handshake.if_valid
-rv32imc_ss_handshake.pc_stall
+@c00022
+rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+@28
+(0)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(1)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(2)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(3)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(4)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(5)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(6)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(7)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(8)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(9)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(10)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(11)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(12)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(13)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(14)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(15)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(16)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(17)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(18)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(19)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(20)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(21)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(22)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(23)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(24)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(25)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(26)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(27)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(28)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(29)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(30)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+(31)rv32imc_ss_handshake.inst_registerfile.registerfile[1][31:0]
+@1401200
+-group_end
+@22
+rv32imc_ss_handshake.inst_registerfile.registerfile[5][31:0]
+rv32imc_ss_handshake.inst_registerfile.registerfile[7][31:0]
+@200
+-CSRs - Internal
+@22
+rv32imc_ss_handshake.csr_addr[11:0]
+@28
+rv32imc_ss_handshake.csr_bit_op
+rv32imc_ss_handshake.csr_bit_set_or_clr
+@22
+rv32imc_ss_handshake.csr_bit_shift[3:0]
+rv32imc_ss_handshake.csr_bitmask[31:0]
+rv32imc_ss_handshake.csr_bitmask_inversion[31:0]
+rv32imc_ss_handshake.csr_data_i[31:0]
+rv32imc_ss_handshake.csr_data_i_bitmanip[31:0]
+rv32imc_ss_handshake.csr_data_o[31:0]
+@28
+rv32imc_ss_handshake.csr_error
+@22
+rv32imc_ss_handshake.csr_mcause[31:0]
+rv32imc_ss_handshake.csr_mepc[31:0]
+rv32imc_ss_handshake.csr_mstatus[31:0]
+rv32imc_ss_handshake.csr_mtval[31:0]
+rv32imc_ss_handshake.csr_mtvec[31:0]
+@28
+rv32imc_ss_handshake.csr_rd
+@22
+rv32imc_ss_handshake.csr_trap_handler_addr[31:0]
+@28
+rv32imc_ss_handshake.csr_use_imm
+rv32imc_ss_handshake.csr_wr
+@200
+-Exceptions - Internal
+@28
+rv32imc_ss_handshake.exception_illegal_instruction
+rv32imc_ss_handshake.exception_instr_addr_misaligned
 [pattern_trace] 1
 [pattern_trace] 0

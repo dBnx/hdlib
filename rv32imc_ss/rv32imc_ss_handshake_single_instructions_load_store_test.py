@@ -339,11 +339,13 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_pc.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",

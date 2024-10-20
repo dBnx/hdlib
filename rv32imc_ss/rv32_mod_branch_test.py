@@ -4,7 +4,6 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
 # from cocotb.handle import Freeze, Release
 from dataclasses import dataclass
 import random
-# from random import random
 
 # TODO: Implement
 
@@ -52,8 +51,6 @@ def test_runner():
     from pathlib import Path
     from cocotb.runner import get_runner
 
-    random.seed()
-
     hdl_toplevel = "rv32_mod_branch"
     sim = os.getenv("SIM", "verilator")
     project_path = Path(__file__).resolve().parent
@@ -71,6 +68,7 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
     runner.test(hdl_toplevel=hdl_toplevel, test_module=f"{hdl_toplevel}_test,",
@@ -78,4 +76,6 @@ def test_runner():
 
 
 if __name__ == "__main__":
+    random.seed()
+
     test_runner()

@@ -15,6 +15,7 @@
 
 module rv32_mod_instruction_decoder (
     input  bit [31:0] instruction,
+    input  bit [ 1:0] priviledge,
 
     output bit [ 4:0] rf_read0_index,
     output bit [ 4:0] rf_read1_index,
@@ -22,8 +23,13 @@ module rv32_mod_instruction_decoder (
     output bit        rf_target_is_x0,
     output bit        rf_source_is_x0,
 
+    output bit        sys_jump_to_m,
+    output bit        sys_ret_from_priv,
+
     output bit [ 5:0] instruction_format,
     output bit [ 5:0] func,
+    output bit [ 2:0] funct3,
+    output bit [ 6:0] funct7,
     output bit        is_mem_or_io,
     output bit        is_system,
     output bit        is_compressed,
@@ -33,40 +39,63 @@ module rv32_mod_instruction_decoder (
     assign opcode = instruction[6:0];
     assign is_compressed = opcode[1:0] != 2'b11;
 
+    bit is_m_mode;
+    assign is_m_mode = priviledge == 2'b11;
+
     // Registers
-    bit is_r_type;
-    bit is_i_type;
-    bit is_s_type;
-    bit is_u_type;
+    bit       is_r_type;
+    bit       is_i_type;
+    bit       is_s_type;
+    bit       is_u_type;
     bit [4:0] rs1, rs2, rd;
     assign rs1 = instruction[19:15];
     assign rs2 = instruction[24:20];
-    assign rd = instruction[11:7];
-    assign rf_read0_index = is_u_type ? 0 : rs1;
-    assign rf_read1_index = is_u_type || is_i_type ? 0 : rs2;
-    assign rf_write0_index = is_s_type ? 0 : rd;
+    assign rd  = instruction[11:7];
+    assign rf_read0_index     = is_u_type ? 0 : rs1;
+    assign rf_read1_index     = is_u_type ? 0 : rs2;
+    assign rf_write0_index    = is_s_type ? 0 : rd;
     assign instruction_format = {is_r_type, is_i_type, is_s_type, is_s_subtype_b,
                                  is_u_type, is_u_subtype_j};
     assign rf_target_is_x0 = rd == 0;
     assign rf_source_is_x0 = rs1 == 0;
+
+    // System instructions:
+    bit is_sys_ecall, is_sys_ebreak, is_sys_mret;
+    bit is_sys_pause, is_sys_wfi;
+    // TODO: Rewrite constants to not check for instr[7]
+    assign is_sys_ecall  = is_system && !instruction[7] && instruction[31:8] == 24'h001_00_0;
+    assign is_sys_ebreak = is_system && !instruction[7] && instruction[31:8] == 24'h001_00_0;
+    assign is_sys_mret   = is_system && !instruction[7] && instruction[31:8] == 24'h720_00_0
+                           && is_m_mode;
+    assign is_sys_pause  = is_system && !instruction[7] && instruction[31:8] == 24'h010_00_0;
+    assign is_sys_wfi    = is_system && !instruction[7] && instruction[31:8] == 24'h105_00_0;
+
+    assign sys_jump_to_m = is_sys_ecall || is_sys_ebreak;
+    assign sys_ret_from_priv = is_sys_mret;
+
+    // TODO: Better implement pause and wfi. Currently NOPs
+
 
     // Subtypes change immediate value encoding
     bit is_u_subtype_j;
     bit is_s_subtype_b;
 
     // Function
-    bit [2:0] funct3;
-    bit [6:0] funct7;
+    // bit [2:0] funct3;
+    // bit [6:0] funct7;
     bit       alternative_func;
     assign funct3 = instruction[14:12];
-    assign funct7 = instruction[31:25];
+    // In the special case of SRAI we have to pass through funct7, even though it's I type.
+    // Reason is that S??I type instructions use I type, but split it like R type. Instead of
+    // reading index, we use that part as an immediate. Includes: SLLI SRLI, SRAI
+    assign funct7 = is_r_type || (is_i_type && funct3 == 3'b101) ? instruction[31:25] : 7'b000_0000;
     assign alternative_func = funct7[5] && (!is_i_type || is_i_type && funct3 == 3'b101); // FIXME: To whitelist -> r_type?
     // Tr
     assign func[3:0] = {alternative_func, funct3};
     assign func[4] = opcode[6:2] == `OP_LUI;
     assign func[5] = opcode[6:2] == `OP_JALR;
 
-    logic promote_priviledge_m;
+    // logic promote_priviledge_m;
     /*
     localparam bit[4:0] ALU_I  = 5'b001_X0;
     localparam bit[2:0] ALU_I_ADDI  = 3'b000;
@@ -96,8 +125,8 @@ module rv32_mod_instruction_decoder (
         is_s_subtype_b = 0;
         is_mem_or_io = 0;
         is_system = 0;
-        promote_priviledge_m = 0;
-        error = 0;
+        // promote_priviledge_m = 0;
+        // error = 0;
 
         if( !is_compressed ) begin
             case(opcode[6:2])
@@ -139,17 +168,30 @@ module rv32_mod_instruction_decoder (
                     // I
                     // ECALL (0), EBREAK (1)
                     is_i_type = 1;
-                    promote_priviledge_m = 1;
+                    // promote_priviledge_m = 1;
                     // CSRRW CSRRS CSRRC CSRRWI CSRRSI CSRRCI
                     // Depending on the type rs1 == x0 has different effects.
                     // is_weird_type = 1;
+                    // if(!sys_known_instr) begin
+                    //     // Unkwnon instruction
+                    //     error = 1;
+                    // end
                 end
-                default: begin 
-                    error = 1;
+                default: begin
+                    // error = 1;
                 end
             endcase
         end
     end
+
+    bit sys_known_instr;
+    assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause || is_sys_wfi;
+    always_comb begin : id_error
+        error = 0;
+        if     (instruction[1:0] != 2'b11)     error = 1;
+        else if(is_system && !sys_known_instr) error = 1;
+    end
+
 
 endmodule
 

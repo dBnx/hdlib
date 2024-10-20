@@ -75,6 +75,15 @@ async def test_foo_todo(dut) -> None:
 
     exec_nop(dut)
 
+@cocotb.test()
+async def test_ecall(dut) -> None:
+    # TODO: Check mstatus
+    pass
+
+@cocotb.test()
+async def test_mret(dut) -> None:
+    pass
+
 # TODO: Missing "system" instructions 
 # FENCE
 # FENCE.TSO
@@ -102,6 +111,7 @@ def test_runner():
         project_path / "rv32_mod_instruction_decoder_imm.sv",
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_pc.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",

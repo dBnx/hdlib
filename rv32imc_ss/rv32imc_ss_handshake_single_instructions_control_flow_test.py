@@ -57,8 +57,8 @@ async def test_j_jal(dut) -> None:
     instr = 0xfd9ff0ef # JAL x1, -40
     await exec_instr(dut, instr)
 
-    assert (initial_pc - 40) & 0xFFFF_FFFF == get_pc(dut)["current"]
-    assert initial_pc + 4 == get_registerfile(dut)["x1"]
+    assert hex((initial_pc - 40) & 0xFFFF_FFFF) == hex(get_pc(dut)["current"])
+    assert hex(initial_pc + 4) == hex(get_registerfile(dut)["x1"])
 
     exec_nop(dut)
 
@@ -73,11 +73,11 @@ async def test_i_jalr(dut) -> None:
     rf["x5"] = 100
     set_registerfile(dut, rf)
 
-    instr = 0x002280e7 # jalr x1, 2(x5)
+    instr = 0x008280e7 # jalr x1, 8(x5)
     await exec_instr(dut, instr)
 
     assert initial_pc + 4 == get_registerfile(dut)["x1"]
-    assert 100 + 2 == get_pc(dut)["current"]
+    assert 100 + 8 == get_pc(dut)["current"]
 
     exec_nop(dut)
 
@@ -94,7 +94,7 @@ async def test_b_beq_true(dut) -> None:
     instr = 0xfe6288e3 # beq x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert (initial_pc - 16) & 0xFFFF_FFFF == get_pc(dut)["current"]
+    assert hex((initial_pc - 16) & 0xFFFF_FFFF) == hex(get_pc(dut)["current"])
 
     exec_nop(dut)
 
@@ -111,7 +111,7 @@ async def test_b_beq_false(dut) -> None:
     instr = 0xfe6288e3 # beq x5, x6, -16
     await exec_instr(dut, instr)
 
-    assert (initial_pc + 4) & 0xFFFF_FFFF == get_pc(dut)["current"]
+    assert hex((initial_pc + 4) & 0xFFFF_FFFF) == hex(get_pc(dut)["current"])
 
     exec_nop(dut)
 
@@ -251,6 +251,11 @@ async def test_b_bgeu_false(dut) -> None:
 
     exec_nop(dut)
 
+# TODO: Test in programs: ECALL & EBREAK may not increment minstret
+
+# async def test_s_ecall_direct(dut) -> None:
+# async def test_s_ecall_vectored(dut) -> None:
+
 # TODO: Missing "system" instructions 
 # FENCE
 # FENCE.TSO
@@ -270,11 +275,13 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
         project_path / "rv32_mod_instruction_fetch.sv",
         project_path / "rv32_mod_load_store_unit.sv",
+        project_path / "rv32_mod_stallington.sv",
         project_path / "rv32_mod_pc.sv",
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",
@@ -290,6 +297,7 @@ def test_runner():
         always=True,
         build_args=build_args,
         build_dir=f"build/{hdl_toplevel}",
+        waves=True,
     )
 
     test_module = os.path.basename(__file__).replace(".py","")

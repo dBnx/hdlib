@@ -7,17 +7,19 @@ import random
 
 from rv32_mod_csrs_basics_test import reset, csrrw
 
-MSCRATCH: int = 0x340
+MEPC: int = 0x341
+MCAUSE: int = 0x342
+MTVAL: int = 0x343
 
 
 # TODO: Mini
-# - Exception: illegal_instruction
-# - Exception: timer
-# - Exception: ecall_from_m_mode
-# - Exception: load_access_fault
-# - Interrupt: external
+# - [X] Exception: illegal_instruction
+# - [ ] Exception: load_access_fault
+# - [ ] Exception: timer
+# - [ ] Exception: ecall_from_m_mode
+# - [ ] Interrupt: external
 
-@cocotb.test()
+#@cocotb.test()
 async def test_trap_exception_illegal_instruction(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
@@ -26,23 +28,46 @@ async def test_trap_exception_illegal_instruction(dut) -> None:
     dut.current_pc.value = 0x0123
     dut.faulting_address.value = 0x0234
     dut.faulting_instruction.value = 0x0456
-
     dut.exception_illegal_instruction.value = 1
+
     await Timer(1, "ps")
     await RisingEdge(dut.clk)
     await Timer(1, "ps")
+
+    dut.current_pc.value = 0x00
+    dut.faulting_address.value = 0x00
+    dut.faulting_instruction.value = 0x00
     dut.exception_illegal_instruction.value = 0
+
+    await Timer(1, "ps")
+    
+    assert 0x0123 == await csrrw(dut, addr=MEPC, din=None)
+    assert 0x0456 == await csrrw(dut, addr=MTVAL, din=None)
+    assert 0x0002 == await csrrw(dut, addr=MCAUSE, din=None)
+
+    await RisingEdge(dut.clk)
+    
+@cocotb.test()
+async def test_trap_interrupt_external(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    await reset(dut)
+    
+    dut.current_pc.value = 0x0123
+    dut.interrupts.value[0] = 1
+
+    await Timer(1, "ps")
+    await RisingEdge(dut.clk)
+    await Timer(1, "ps")
+
+    dut.current_pc.value += 4
+    dut.interrupts.value[0] = 0
+
     await Timer(1, "ps")
 
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
-    
-    
-    
-
-    # assert 0x0000_0000 == await csrrw(dut, addr=MSCRATCH, din=0x1234_5678)
-    # assert 0x1234_5678 == await csrrw(dut, addr=MSCRATCH, din=0x5678_9ABC)
-    # assert 0x5678_9ABC == await csrrw(dut, addr=MSCRATCH, din=None)
+        
 
 
 def test_runner():

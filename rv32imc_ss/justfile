@@ -1,0 +1,30 @@
+
+ut: ut-mod ut-single-instruction ut-program-snippets
+    @echo ""
+
+ut-mod:
+    python rv32_mod_alu_test.py
+    python rv32_mod_branch_test.py
+    python rv32_mod_csrs_basics_test.py
+    python rv32_mod_csrs_trap_test.py
+    python rv32_mod_instruction_decoder_func_test.py
+    python rv32_mod_instruction_decoder_imm_test.py
+    python rv32_mod_instruction_decoder_test.py
+    python rv32_mod_instruction_fetch_test.py
+    python rv32_mod_load_store_unit_test.py
+    python rv32_mod_pc_test.py
+    python rv32_mod_registerfile_test.py
+    python rv32_mod_types_test.py
+    
+ut-single-instruction:
+    # python rv32imc_ss_handshake_single_instructions_*_test.py
+    python rv32imc_ss_handshake_single_instructions_alu_test.py
+    python rv32imc_ss_handshake_single_instructions_control_flow_test.py
+    python rv32imc_ss_handshake_single_instructions_csr_test.py
+    python rv32imc_ss_handshake_single_instructions_load_store_test.py
+    python rv32imc_ss_handshake_single_instructions_misc_test.py
+    python rv32imc_ss_handshake_single_instructions_system_test.py
+
+ut-program-snippets:
+    python rv32imc_ss_handshake_program_snippets_test.py
+    python rv32imc_ss_handshake_program_snippets_long_test.py.rw-r--r-- 4.2k dave 20 Oct 15:33 rv32_mod_alu_test.py

@@ -5,6 +5,10 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer, First
 from dataclasses import dataclass
 import random
 
+# TODO:
+# - [ ] CSR Swap csrrw x0, MSCRATCH, x0
+# - [ ] Vendor, HART ID, impl, ..
+
 
 MSCRATCH: int = 0x340
 MCYCLE: int = 0xB00
@@ -62,6 +66,9 @@ async def test_reset(dut) -> None:
     assert 0 == dut.mtval.value
     assert 0 == dut.mip.value
     assert 0 == dut.mie.value
+
+    assert 0 == dut.csr_mcycle.value
+    assert 0 == dut.csr_mtime.value
 
 async def csrrw(dut, addr: int, din : int|None, priviledge: int = 0b11, perform_no_read: bool = False) -> int: 
     """If `din` is None, then no write to the CSR is perfomed. This equates to issuing the `csrrw` instruction with x0.
@@ -138,8 +145,6 @@ async def test_mcycle_read_high(dut) -> None:
     assert mcycle_high_new != mcycle_high_old
 
     await RisingEdge(dut.clk)
-
-
 
 def test_runner():
     import os

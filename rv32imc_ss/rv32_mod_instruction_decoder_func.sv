@@ -46,15 +46,15 @@ module rv32_mod_instruction_decoder_func (
     output bit               rf_write0_enable,
     output bit               alu_op0_use_pc,
     output bit               alu_op1_use_imm,
-    output bit        [ 4:0] alu_func,
+    output bit               alu_force_add,
     output bit        [ 3:0] ram_req,
     output bit               ram_wr,
     output wb_source_t       wb_source, // TODO: Output _CSR
 
     output bit               csr_wr, // TODO
     output bit               csr_rd, // TODO
-    output bit               csr_bit_op,
-    output bit               csr_bit_set_or_clr,
+    output bit               csr_bit_op,// TODO: No driver
+    output bit               csr_bit_set_or_clr, // TODO: No driver
     output bit               csr_use_imm,
 
     output br_condition_t    br_cond,
@@ -84,7 +84,7 @@ module rv32_mod_instruction_decoder_func (
     rf_write0_enable = 0;
     alu_op0_use_pc = 0;
     alu_op1_use_imm = 0;
-    alu_func = {1'b0, `ALU_OP_ADD};
+    alu_force_add = 1;
     ram_req = 0;
     ram_wr = 0;
     csr_wr = 0;
@@ -100,7 +100,7 @@ module rv32_mod_instruction_decoder_func (
     case (instruction_format)
       6'b100000: begin  // R Type
         rf_write0_enable = 1;
-        alu_func = func[4:0];
+        alu_force_add = 0;
       end
       6'b010000: begin  // I Type - Op, Loads or all CSR*
         rf_write0_enable = 1;
@@ -109,6 +109,7 @@ module rv32_mod_instruction_decoder_func (
           // ALU Func must be ALU_OP_ADD
           wb_source    = `WB_SOURCE_LSU;
           ram_req[2:0] = func[2:0];  // Width and signed-ness
+          alu_force_add = 1;
         end else if (is_jalr) begin
           rf_write0_enable = 1;
           alu_op1_use_imm = 1;
@@ -122,7 +123,7 @@ module rv32_mod_instruction_decoder_func (
           csr_wr = !rf_source_is_x0; // TODO: Check behaviour
           csr_rd = !rf_target_is_x0; // TODO: Check behaviour
         end else begin
-          alu_func = func[4:0];
+          alu_force_add = 0;
         end
 
         // TODO: csr_* and 
@@ -132,7 +133,7 @@ module rv32_mod_instruction_decoder_func (
       6'b001000: begin  // S Type - Store
         alu_op1_use_imm = 1;
         ram_req = func[3:0];  // Width and signdness // TODO: Check!
-        // alu_func[3:0] = `ALU_OP_ADD;  // TODO: Handle addressing somehow
+        alu_force_add = 1;
         ram_wr = 1;
       end
       6'b001100: begin  // B Type - Conditional

@@ -8,6 +8,7 @@ import random
 
 from rv32imc_ss_handshake_program_snippets_test import get_registerfile, set_registerfile, get_pc, exec_nop, lsu_watcher, run_program, instr_list_to_program
 
+
 async def reset_dut(dut):
     dut.reset.value = 1
     dut.instr_ack.value = 0
@@ -37,10 +38,11 @@ async def test_run_program_in_irom_utilize_iram_mmr(dut):
     await reset_dut(dut)
 
     dut.gpio_i[0].value = 0x12345678
-    program_runner = cocotb.start_soon(run_program(dut.inst_hart, [], memory_regions_are_valid_instr=True, lsu_watcher_cb=None))
+    program_runner = cocotb.start_soon(run_program(
+        dut.inst_hart, [], memory_regions_are_valid_instr=True, lsu_watcher_cb=None))
     timeout = ClockCycles(dut.clk, 30)
     await First(program_runner, timeout)
-    await Timer(1, "ns") # For better traces
+    await Timer(1, "ns")  # For better traces
 
     assert 0x12345678 == dut.gpio_o[0].value, "Program outputs to Gpio0 on success"
 
@@ -61,6 +63,7 @@ def test_runner():
     verilog_sources = [
         project_path / "rv32_mod_alu.sv",
         project_path / "rv32_mod_branch.sv",
+        project_path / "rv32_mod_csrs.sv",
         project_path / "rv32_mod_instruction_decoder.sv",
         project_path / "rv32_mod_instruction_decoder_func.sv",
         project_path / "rv32_mod_instruction_decoder_imm.sv",
@@ -71,6 +74,7 @@ def test_runner():
         project_path / "rv32_mod_registerfile.sv",
         project_path / "rv32_mod_types.sv",
         project_path / "rv32imc_ss_handshake.sv",
+        project_path / "ram_dp_handshake.sv",
         # project_path / "kernel.test.irom.iram.mmr.mem",
         project_path / f"{hdl_toplevel}.sv",
     ]

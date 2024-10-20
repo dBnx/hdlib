@@ -65,8 +65,8 @@ module rv32imc_ss_handshake #(
 
   bit [31:0] pc_overwrite_data;
   bit        pc_overwrite_enable;
-  assign pc_overwrite_data = alu_result;
-  assign pc_overwrite_enable = branch_taken;
+  assign pc_overwrite_data = trap_taken ? csr_trap_handler_addr : alu_result;
+  assign pc_overwrite_enable = branch_taken || trap_taken;
 
   // Register File -----------------------------------------------------------
   bit        rf_target_is_x0;
@@ -99,9 +99,15 @@ module rv32imc_ss_handshake #(
   bit                 id_error_0, id_error_1;
   bit                 id_error;
 
+  bit                 id_sys_jump_to_m;
+  bit                 id_sys_ret_from_priv;
+
+
   bit                 alu_op0_use_pc;
   bit                 alu_op1_use_imm;
-  bit          [ 4:0] alu_func;
+  bit                 alu_force_add;
+  bit          [ 2:0] alu_funct3;
+  bit          [ 6:0] alu_funct7;
   bit          [ 3:0] lsu_req_type;
   bit                 lsu_wr;
   bit                 lsu_req;
@@ -130,8 +136,9 @@ module rv32imc_ss_handshake #(
   // ALU ---------------------------------------------------------------------
   bit [31:0] alu_read0_data, alu_read1_data;
   bit [31:0] alu_result;
-  assign alu_read0_data = alu_op0_use_pc ? pc_current : rf_read0_data;
-  assign alu_read1_data = alu_op1_use_imm ? immediate : rf_read1_data;
+  bit        alu_error; // TODO
+  assign     alu_read0_data = alu_op0_use_pc ? pc_current : rf_read0_data;
+  assign     alu_read1_data = alu_op1_use_imm ? immediate : rf_read1_data;
 
   // Branching Module --------------------------------------------------------
   bit        branch_taken;
@@ -141,52 +148,35 @@ module rv32imc_ss_handshake #(
   bit [31:0] lsu_data_o;
   bit        lsu_valid, lsu_error; // TODO: lsu_error not connected
   bit        lsu_stall;
-  assign lsu_address = alu_result;
+  assign     lsu_address = alu_result;
 
-  wb_source_t           wb_source;
-  assign wb_source = id_wb_source;
+  wb_source_t wb_source;
+  assign      wb_source = id_wb_source;
 
-  // - Resolve stalled write
-  // - TODO: ID must hold values until stall is resolved
-  // - TODO: Replace *_stalled variants with a stall_lsu and stall_* variants.
-  // bit       rf_stalled, rf_stalled_p1, rf_stalled_passthrough;
-  // bit       rf_write0_enable_stalled;
-  // bit [4:0] rf_write0_index_stalled;
-  // assign rf_stalled_passthrough = is_mem_or_io || (rf_stalled_p1 || rf_stalled); // FIXME: Same as lsu_valid
+  // CSRs --------------------------------------------------------------------
+    bit [31:0] csr_mstatus;
+    bit [31:0] csr_mepc;
+    bit [31:0] csr_mtval;
+    bit [31:0] csr_mtvec;
+    bit [31:0] csr_mcause;
 
-  // bit save_stalled;
-  // assign save_stalled = is_mem_or_io && !rf_stalled;
 
-  // assign wb_source = rf_stalled_passthrough ? `WB_SOURCE_LSU : id_wb_source;
+  // - [x] Set jump location - not vectored
+  // - [x] Set mepc
+  // - [-] Set mcause
+  // - [-] Set mtval
 
-    /*
-  always_ff @(posedge clk or posedge reset) begin
-    if(reset) begin
-        rf_stalled <= 0;
-        rf_write0_enable_stalled <= 0;
-        rf_write0_index_stalled <= 0;
-    end else if (lsu_valid) begin
-        rf_stalled <= 0;
-        rf_write0_enable_stalled <= 0;
-        rf_write0_index_stalled <= 0;
-    end else if(save_stalled) begin
-        rf_stalled <= 1;
-        rf_write0_enable_stalled <= id_write0_enable;
-        rf_write0_index_stalled <= id_write0_index;
-    end
-
-    rf_stalled_p1 <= rf_stalled;
-  end
-  */
+    // TODO: In own module
+    // TODO: Handle vectored
 
   // Stall Controller --------------------------------------------------------
-
   bit enable_mut_pc;
   bit enable_mut_rf;
   // bit enable_mut_lsu; // DOME
   bit enable_mut_if;
   bit enable_mut_csr; // TODO
 
+  // Instantiations ----------------------------------------------------------
   rv32_mod_stallington inst_stall (
       .clk  (clk  ),
       .reset(reset),
@@ -238,6 +228,13 @@ module rv32imc_ss_handshake #(
 
   rv32_mod_instruction_decoder inst_instr_dec (
       .instruction       (if_instruction),
+      .priviledge        (priviledge),
+
+      .funct3            (alu_funct3),
+      .funct7            (alu_funct7),
+
+      .sys_jump_to_m     (id_sys_jump_to_m),
+      .sys_ret_from_priv (id_sys_ret_from_priv),
 
       .rf_target_is_x0   (rf_target_is_x0),
       .rf_source_is_x0   (rf_source_is_x0),
@@ -260,22 +257,22 @@ module rv32imc_ss_handshake #(
       .rf_target_is_x0   (rf_target_is_x0),
       .rf_source_is_x0   (rf_source_is_x0),
 
-      .rf_write0_enable(id_write0_enable),
-      .alu_op0_use_pc  (alu_op0_use_pc),
-      .alu_op1_use_imm (alu_op1_use_imm),
-      .alu_func        (alu_func),
-      .ram_req         (lsu_req_type),
-      .ram_wr          (lsu_wr),
-      .csr_wr          (csr_wr),
-      .csr_rd          (csr_rd),
+      .rf_write0_enable  (id_write0_enable),
+      .alu_op0_use_pc    (alu_op0_use_pc),
+      .alu_op1_use_imm   (alu_op1_use_imm),
+      .alu_force_add     (alu_force_add),
+      .ram_req           (lsu_req_type),
+      .ram_wr            (lsu_wr),
+      .csr_wr            (csr_wr),
+      .csr_rd            (csr_rd),
       .csr_bit_op        (csr_bit_op),
       .csr_bit_set_or_clr(csr_bit_set_or_clr),
       .csr_use_imm       (csr_use_imm),
-      .wb_source       (id_wb_source),
-      .br_cond         (br_cond),
-      .br_is_cond      (br_is_cond),
-      .br_jmp          (br_is_jmp),
-      .error           (id_error_1)
+      .wb_source         (id_wb_source),
+      .br_cond           (br_cond),
+      .br_is_cond        (br_is_cond),
+      .br_jmp            (br_is_jmp),
+      .error             (id_error_1)
   );
 
   rv32_mod_instruction_decoder_imm inst_instr_dec_imm (
@@ -301,10 +298,13 @@ module rv32imc_ss_handshake #(
   );
 
   rv32_mod_alu inst_alu (
-      .func      (alu_func),
+      .force_add (alu_force_add),
+      .funct3    (alu_funct3),
+      .funct7    (alu_funct7),
       .read0_data(alu_read0_data),
       .read1_data(alu_read1_data),
-      .result    (alu_result)
+      .result    (alu_result),
+      .error     (alu_error)
   );
 
   rv32_mod_branch inst_branch (
@@ -341,12 +341,11 @@ module rv32imc_ss_handshake #(
   );
 
     // TODO: Finish:
-    //       - CSR integration
     //       - Sync exceptions
     //       - Interrupts
 
     // Currently only machine mode is supported
-    bit [ 1:0] priviledge = 2'b11; 
+    bit [ 1:0] priviledge = 2'b11;
 
     bit        csr_bit_op;
     bit        csr_bit_set_or_clr;
@@ -372,6 +371,17 @@ module rv32imc_ss_handshake #(
     assign csr_bitmask = (1 << csr_bit_shift) ^ csr_bitmask_inversion;
     assign csr_data_i_bitmanip = csr_data_o & csr_bitmask;
 
+    bit instruction_retired;
+    assign instruction_retired = enable_mut_pc; // TODO: Verify
+
+    bit exception_instr_addr_misaligned;
+    assign exception_instr_addr_misaligned = pc_next[1:0] != 2'b00;
+
+    bit exception_illegal_instruction;
+    assign exception_illegal_instruction = id_error;
+
+    bit trap_taken;
+    bit [31:0] csr_trap_handler_addr;
 
     rv32_mod_csrs #(
         .INITIAL_MTVEC  (INITIAL_MTVEC  ),
@@ -384,6 +394,7 @@ module rv32imc_ss_handshake #(
         .clk       (clk),
         .reset     (reset),
         .priviledge(priviledge),
+        .instruction_retired(instruction_retired),
 
         // <<<< Register file I/O >>>>
         .wr    (csr_wr),     // input logic wr,
@@ -395,6 +406,9 @@ module rv32imc_ss_handshake #(
 
         // TODO: Everything else :)
         // <<<< TRAPS >>>>
+        .sys_jump_to_m     (id_sys_jump_to_m),
+        .sys_ret_from_priv (id_sys_ret_from_priv),
+
         .mip_new(), // input  logic [31:0] mip_new,
         .mip_cur(), // output logic [31:0] mip_cur,
 
@@ -403,33 +417,35 @@ module rv32imc_ss_handshake #(
         .trap_handler_active(), // output logic trap_handler_active,
 
         // Explicit exception causes
-        .exception_instr_addr_misaligned(), // input logic exception_instr_addr_misaligned,
-        .exception_instr_access_fault   (), // input logic exception_instr_access_fault,
-        .exception_illegal_instruction  (), // input logic exception_illegal_instruction,
-        .exception_breakpoint           (), // input logic exception_breakpoint,
-        .exception_load_addr_misaligned (), // input logic exception_load_addr_misaligned,
-        .exception_load_access_fault    (), // input logic exception_load_access_fault,
-        .exception_store_addr_misaligned(), // input logic exception_store_addr_misaligned,
-        .exception_store_access_fault   (), // input logic exception_store_access_fault,
-        .exception_ecall_from_u_mode    (), // input logic exception_ecall_from_u_mode,
-        .exception_ecall_from_s_mode    (), // input logic exception_ecall_from_s_mode,
-        .exception_ecall_from_m_mode    (), // input logic exception_ecall_from_m_mode,
-        .exception_instr_page_fault     (), // input logic exception_instr_page_fault,
-        .exception_load_page_fault      (), // input logic exception_load_page_fault,
-        .exception_store_page_fault     (), // input logic exception_store_page_fault,
+        .exception_instr_addr_misaligned(exception_instr_addr_misaligned),
+        .exception_instr_access_fault   (1'b0), // input logic exception_instr_access_fault,
+        .exception_illegal_instruction  (exception_illegal_instruction),
+        .exception_breakpoint           (1'b0), // input logic exception_breakpoint,
+        .exception_load_addr_misaligned (1'b0), // input logic exception_load_addr_misaligned,
+        .exception_load_access_fault    (instr_err),
+        .exception_store_addr_misaligned(1'b0), // input logic exception_store_addr_misaligned,
+        .exception_store_access_fault   (data_err),
+        .exception_ecall_from_u_mode    (1'b0), // input logic exception_ecall_from_u_mode,
+        .exception_ecall_from_s_mode    (1'b0), // input logic exception_ecall_from_s_mode,
+        .exception_ecall_from_m_mode    (id_sys_jump_to_m),
+        .exception_instr_page_fault     (1'b0), // input logic exception_instr_page_fault,
+        .exception_load_page_fault      (1'b0), // input logic exception_load_page_fault,
+        .exception_store_page_fault     (1'b0), // input logic exception_store_page_fault,
 
         // New signals for assigning to csr_mepc and csr_mtval
-        .current_pc          (pc_current), // input logic [31:0] current_pc,
-        .faulting_address    (), // input logic [31:0] faulting_address,
+        .pc_current          (pc_current),
+        .pc_next             (pc_next),
+        .faulting_address    (), // input logic [31:0] faulting_address, // TODO
         .faulting_instruction(if_instruction), // input logic [31:0] faulting_instruction,
 
-        .serve_trap(), // output logic serve_trap, // registered
+        .serve_trap       (trap_taken), // output logic serve_trap, // registered
+        .trap_handler_addr(csr_trap_handler_addr),
 
         // <<<< CSRs direct access >>>>
-        .mstatus(), // output logic [31:0] mstatus,
-        .mepc   (), // output logic [31:0] mepc,
-        .mtval  (), // output logic [31:0] mtval,
-        .mtvec  (), // output logic [31:0] mtvec,
+        .mstatus(csr_mstatus), // output logic [31:0] mstatus,
+        .mepc   (csr_mepc), // output logic [31:0] mepc,
+        .mtval  (csr_mtval), // output logic [31:0] mtval,
+        .mtvec  (csr_mtvec), // output logic [31:0] mtvec,
         // Machine Interrupt Pending
         .mip    (), // output logic [31:0] mip,
         // Machine Interrupt Enable
@@ -438,4 +454,5 @@ module rv32imc_ss_handshake #(
         // output logic [31:0] mtime,
         // output logic [31:0] mcycle
     );
+
 endmodule

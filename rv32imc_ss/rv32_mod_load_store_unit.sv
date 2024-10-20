@@ -35,16 +35,17 @@ module rv32_mod_load_store_unit (
   // The address provided is byte oriented, but we operate an words,
   // so set lower two bits permanently to 0 and shift BE by the offset. 
   // Assume aligned reads / writes.
-  logic [1:0] be_shift = address[1:0];
+  bit [ 1:0] be_shift;
+  assign be_shift = address[1:0];
 
-  logic [3:0] dext_be_comb;
-  logic [31:0] dext_di_comb;
+  bit [ 3:0] dext_be_comb;
+  bit [31:0] dext_di_comb;
 
 
-  logic req_signed;
-  logic [1:0] req_size;
+  bit       req_signed;
+  bit [1:0] req_size;
 
-  logic req_active;
+  bit req_active;
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
       req_active <= 0;
@@ -61,10 +62,10 @@ module rv32_mod_load_store_unit (
 
   // Stalling halts the PC, so only emit if there is an actual request
 
-  logic [31:8] sign;
-  logic sign_16;
-  logic sign_8;
-  logic sign_bit;
+  bit [31:8] sign;
+  bit        sign_16;
+  bit        sign_8;
+  bit        sign_bit;
   assign sign_16 = be_shift[1] ? dext_di[31] : dext_di[15];
   assign sign = {24{sign_bit}};
 
