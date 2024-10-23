@@ -119,6 +119,7 @@ module rv32_mod_instruction_decoder (
     localparam bit[2:0] ALU_S_AND     = 3'b111;
     */
 
+    bit is_sys_csr;
     always_comb begin
         is_r_type = 0;
         is_i_type = 0;
@@ -128,6 +129,7 @@ module rv32_mod_instruction_decoder (
         is_s_subtype_b = 0;
         is_mem_or_io = 0;
         is_system = 0;
+        is_sys_csr = 0;
         // promote_priviledge_m = 0;
         // error = 0;
 
@@ -168,6 +170,7 @@ module rv32_mod_instruction_decoder (
                 end
                 `OP_SYSTEM  : begin
                     is_system = 1;
+                    is_sys_csr = funct3[1:0] != 2'b00;
                     // I
                     // ECALL (0), EBREAK (1)
                     is_i_type = 1;
@@ -188,7 +191,7 @@ module rv32_mod_instruction_decoder (
     end
 
     bit sys_known_instr;
-    assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause || is_sys_wfi;
+    assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause || is_sys_wfi || is_sys_csr;
 
     bit sys_permission_error;
     assign sys_permission_error = is_system && !sys_known_instr;
