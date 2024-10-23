@@ -103,7 +103,7 @@ async def test_csrrw_mscratch(dut) -> None:
     assert 0x1234_5678 == rf["x6"] # Unchanged
     assert 0x1234_5678 == dut.inst_csrs.csr_mscratch.value
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 @cocotb.test()
 async def test_csrrw_mcycle(dut) -> None:
@@ -130,7 +130,7 @@ async def test_csrrw_mcycle(dut) -> None:
     # - Write
     # - Overflow & mcycleh
 
-    exec_nop(dut)
+    await exec_nop(dut)
 
 
 # TODO: Missing instructions 

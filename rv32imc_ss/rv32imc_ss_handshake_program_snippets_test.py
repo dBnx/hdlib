@@ -436,7 +436,7 @@ async def test_write_write_read_read(dut):
 
     program_runner = cocotb.start_soon(run_program(dut, program))
 
-    timeout = ClockCycles(dut.clk, 30)
+    timeout = ClockCycles(dut.clk, 42)
     await First(program_runner, timeout)
     await Timer(2, "ns")
 

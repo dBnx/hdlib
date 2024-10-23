@@ -16,6 +16,7 @@
 module rv32_mod_instruction_decoder (
     input  bit [31:0] instruction,
     input  bit [ 1:0] priviledge,
+    input  bit        in_trap_handler,
 
     output bit [ 4:0] rf_read0_index,
     output bit [ 4:0] rf_read1_index,
@@ -63,10 +64,12 @@ module rv32_mod_instruction_decoder (
     bit is_sys_ecall, is_sys_ebreak, is_sys_mret;
     bit is_sys_pause, is_sys_wfi;
     // TODO: Rewrite constants to not check for instr[7]
-    assign is_sys_ecall  = is_system && !instruction[7] && instruction[31:8] == 24'h001_00_0;
+    // TODO: pause and wfi are probably also available in is_m_mode?
+    // NOTE: is_sys_ecall does not test for !in_trap_handler as we double fault anyway.
+    assign is_sys_ecall  = is_system && !instruction[7] && instruction[31:8] == 24'h000_00_0;
     assign is_sys_ebreak = is_system && !instruction[7] && instruction[31:8] == 24'h001_00_0;
-    assign is_sys_mret   = is_system && !instruction[7] && instruction[31:8] == 24'h720_00_0
-                           && is_m_mode;
+    assign is_sys_mret   = is_system && !instruction[7] && instruction[31:8] == 24'h302_00_0
+                           && is_m_mode && in_trap_handler;
     assign is_sys_pause  = is_system && !instruction[7] && instruction[31:8] == 24'h010_00_0;
     assign is_sys_wfi    = is_system && !instruction[7] && instruction[31:8] == 24'h105_00_0;
 
@@ -186,12 +189,15 @@ module rv32_mod_instruction_decoder (
 
     bit sys_known_instr;
     assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause || is_sys_wfi;
+
+    bit sys_permission_error;
+    assign sys_permission_error = is_system && !sys_known_instr;
+
     always_comb begin : id_error
         error = 0;
-        if     (instruction[1:0] != 2'b11)     error = 1;
-        else if(is_system && !sys_known_instr) error = 1;
+        if     (instruction[1:0] != 2'b11) error = 1;
+        else if(sys_permission_error)      error = 1;
     end
 
 
 endmodule
-

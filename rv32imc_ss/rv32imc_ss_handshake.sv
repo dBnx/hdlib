@@ -24,7 +24,7 @@ module rv32imc_ss_handshake #(
     parameter bit [31:0] INITIAL_SP = 32'h7FFFFFF0,
 
     parameter bit [31:0] INITIAL_MTVEC   = 32'h00010000,
-    parameter bit [31:0] INITIAL_MSTATUS = 32'h00000080,
+    parameter bit [31:0] INITIAL_MSTATUS = 32'h00000000,
     parameter bit [31:0] MVENDOR_ID      = 32'h00000000,
     parameter bit [31:0] MARCH_ID        = 32'h00000000,
     parameter bit [31:0] MIMP_ID         = 32'h00000000,
@@ -55,7 +55,7 @@ module rv32imc_ss_handshake #(
   bit [31:0] if_instruction;
   bit        if_valid;
   bit        if_instr_req;
-  assign instr_req = if_instr_req;
+  assign instr_req = if_instr_req && !double_fault; // Just stop @ double fault
   // assign if_address = pc_current;
 
   // Program Counter ( global pointer ) --------------------------------------
@@ -65,8 +65,11 @@ module rv32imc_ss_handshake #(
 
   bit [31:0] pc_overwrite_data;
   bit        pc_overwrite_enable;
-  assign pc_overwrite_data = trap_taken ? csr_trap_handler_addr : alu_result;
-  assign pc_overwrite_enable = branch_taken || trap_taken;
+  assign pc_overwrite_data = csr_force_update_pc ? csr_trap_handler_addr : alu_result;
+  assign pc_overwrite_enable = branch_taken || csr_force_update_pc;
+
+  bit        csr_force_update_pc;
+  assign csr_force_update_pc =trap_taken || id_sys_ret_from_priv;
 
   // Register File -----------------------------------------------------------
   bit        rf_target_is_x0;
@@ -154,11 +157,11 @@ module rv32imc_ss_handshake #(
   assign      wb_source = id_wb_source;
 
   // CSRs --------------------------------------------------------------------
-    bit [31:0] csr_mstatus;
-    bit [31:0] csr_mepc;
-    bit [31:0] csr_mtval;
-    bit [31:0] csr_mtvec;
-    bit [31:0] csr_mcause;
+  bit [31:0] csr_mstatus;
+  bit [31:0] csr_mepc;
+  bit [31:0] csr_mtval;
+  bit [31:0] csr_mtvec;
+  bit [31:0] csr_mcause;
 
 
   // - [x] Set jump location - not vectored
@@ -166,8 +169,8 @@ module rv32imc_ss_handshake #(
   // - [-] Set mcause
   // - [-] Set mtval
 
-    // TODO: In own module
-    // TODO: Handle vectored
+  // TODO: In own module
+  // TODO: Handle vectored
 
   // Stall Controller --------------------------------------------------------
   bit enable_mut_pc;
@@ -181,7 +184,7 @@ module rv32imc_ss_handshake #(
       .clk  (clk  ),
       .reset(reset),
 
-      .is_instr_new   (if_valid    ),
+      .is_instr_new   (if_valid && !double_fault),
       .is_mem_or_io   (is_mem_or_io),
       .is_branch_taken(branch_taken),
       .io_lsu_valid   (lsu_valid   ),
@@ -229,6 +232,7 @@ module rv32imc_ss_handshake #(
   rv32_mod_instruction_decoder inst_instr_dec (
       .instruction       (if_instruction),
       .priviledge        (priviledge),
+      .in_trap_handler   (in_trap_handler),
 
       .funct3            (alu_funct3),
       .funct7            (alu_funct7),
@@ -381,7 +385,10 @@ module rv32imc_ss_handshake #(
     assign exception_illegal_instruction = id_error;
 
     bit trap_taken;
+    bit double_fault;
     bit [31:0] csr_trap_handler_addr;
+
+    bit in_trap_handler;
 
     rv32_mod_csrs #(
         .INITIAL_MTVEC  (INITIAL_MTVEC  ),
@@ -413,8 +420,6 @@ module rv32imc_ss_handshake #(
         .mip_cur(), // output logic [31:0] mip_cur,
 
         .interrupts         (), // input  logic [5:0] interrupts,
-        .trap_handler_clear (), // input  logic trap_handler_clear,
-        .trap_handler_active(), // output logic trap_handler_active,
 
         // Explicit exception causes
         .exception_instr_addr_misaligned(exception_instr_addr_misaligned),
@@ -435,15 +440,18 @@ module rv32imc_ss_handshake #(
         // New signals for assigning to csr_mepc and csr_mtval
         .pc_current          (pc_current),
         .pc_next             (pc_next),
-        .faulting_address    (), // input logic [31:0] faulting_address, // TODO
-        .faulting_instruction(if_instruction), // input logic [31:0] faulting_instruction,
+        .load_store_address  (lsu_address),
+        .faulting_instruction(if_instruction),
 
-        .serve_trap       (trap_taken), // output logic serve_trap, // registered
-        .trap_handler_addr(csr_trap_handler_addr),
+        .ret_from_trap      (id_sys_ret_from_priv),
+        .serve_trap         (trap_taken),
+        .trap_handler_addr  (csr_trap_handler_addr),
+        .trap_handler_active(in_trap_handler),
+        .double_fault       (double_fault),
 
         // <<<< CSRs direct access >>>>
-        .mstatus(csr_mstatus), // output logic [31:0] mstatus,
-        .mepc   (csr_mepc), // output logic [31:0] mepc,
+        .mstatus(csr_mstatus), // Replace by specific bits
+        .mepc   (csr_mepc), // Replaced by trap_handler_addr?
         .mtval  (csr_mtval), // output logic [31:0] mtval,
         .mtvec  (csr_mtvec), // output logic [31:0] mtvec,
         // Machine Interrupt Pending
@@ -456,3 +464,29 @@ module rv32imc_ss_handshake #(
     );
 
 endmodule
+
+// TEST:
+// - Check if invalid instr / ecall
+//   - Jumps to handler
+//   - Sets inst_csrs.in_trap_handler
+//   - Causes an infinite loop if the handler points to mret
+//   - Causes a double fault if the handler points to an invalid instr / ecall
+//   - Updates mstatus
+//   - Updates mepc
+//
+// - Check that mret
+//   - Returns to mepc
+//   - Updates mstatus
+//   - Updates pc
+//
+// - Check program involving invalid instr / ecall
+//   - Works in conjunction with mret
+//   - Works repeatedly
+//   - Works back-to-back
+//   - Is usable with a real handler
+//     - Implementing custom instruction (div?, C or bitmanip)
+//     - Soft reset?
+
+// TODO: & TEST:
+// - Check vectored interrupts
+// - SB, SH, LB, LH
