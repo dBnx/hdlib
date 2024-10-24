@@ -43,6 +43,8 @@ module rv32_mod_instruction_decoder (
     bit is_m_mode;
     assign is_m_mode = priviledge == 2'b11;
 
+    bit is_misc_mem;
+
     // Registers
     bit       is_r_type;
     bit       is_i_type;
@@ -76,6 +78,8 @@ module rv32_mod_instruction_decoder (
     assign sys_jump_to_m = is_sys_ecall || is_sys_ebreak;
     assign sys_ret_from_priv = is_sys_mret;
 
+    bit is_fence;
+    assign is_fence      = is_misc_mem && funct3 == 3'b000;
     // TODO: Better implement pause and wfi. Currently NOPs
 
 
@@ -120,6 +124,7 @@ module rv32_mod_instruction_decoder (
     */
 
     bit is_sys_csr;
+    bit error_unknown_opcode;
     always_comb begin
         is_r_type = 0;
         is_i_type = 0;
@@ -130,6 +135,8 @@ module rv32_mod_instruction_decoder (
         is_mem_or_io = 0;
         is_system = 0;
         is_sys_csr = 0;
+        is_misc_mem = 0;
+        error_unknown_opcode = 0;
         // promote_priviledge_m = 0;
         // error = 0;
 
@@ -167,6 +174,7 @@ module rv32_mod_instruction_decoder (
                 `OP_MISC_MEM: begin  // I
                     // FENCE FENCE.TSO PAUSE
                     // is_i_type = 1;
+                    is_misc_mem = 1;
                 end
                 `OP_SYSTEM  : begin
                     is_system = 1;
@@ -184,14 +192,15 @@ module rv32_mod_instruction_decoder (
                     // end
                 end
                 default: begin
-                    // error = 1;
+                    error_unknown_opcode = 1;
                 end
             endcase
         end
     end
 
     bit sys_known_instr;
-    assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause || is_sys_wfi || is_sys_csr;
+    assign sys_known_instr = is_sys_ebreak || is_sys_ecall || is_sys_mret || is_sys_pause
+                          || is_sys_wfi || is_sys_csr || is_fence;
 
     bit sys_permission_error;
     assign sys_permission_error = is_system && !sys_known_instr;
@@ -200,6 +209,7 @@ module rv32_mod_instruction_decoder (
         error = 0;
         if     (instruction[1:0] != 2'b11) error = 1;
         else if(sys_permission_error)      error = 1;
+        else if(error_unknown_opcode)      error = 1;
     end
 
 

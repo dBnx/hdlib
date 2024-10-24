@@ -238,7 +238,7 @@ async def test_s_lh(dut) -> None:
     assert 0 == dut.data_wr.value
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
 
     # Check that it's waiting
     initial_pc = rv32imc.get_pc(dut)["current"]
@@ -255,9 +255,9 @@ async def test_s_lh(dut) -> None:
     await Timer(1, "ps")
     dut.data_ack.value = 0
 
-    assert 0x1234 == get_registerfile(dut)["x5"]
+    assert 0x1234 == rv32imc.get_registerfile(dut)["x5"]
     await RisingEdge(dut.clk)
-    assert 0x1234 == get_registerfile(dut)["x5"]
+    assert 0x1234 == rv32imc.get_registerfile(dut)["x5"]
 
     await rv32imc.exec_nop(dut)
 
@@ -267,7 +267,7 @@ async def test_s_lw(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
     set_registerfile(dut, rf)
 
@@ -278,7 +278,7 @@ async def test_s_lw(dut) -> None:
     assert 0 == dut.data_wr.value
     assert 0b1111 == dut.data_be.value
     assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
 
     await rv32imc.exec_nop(dut)
 
@@ -288,7 +288,7 @@ async def test_s_lbu(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
     set_registerfile(dut, rf)
 
@@ -299,7 +299,7 @@ async def test_s_lbu(dut) -> None:
     assert 0 == dut.data_wr.value
     assert 0b0100 == dut.data_be.value
     assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
 
     await rv32imc.exec_nop(dut)
 
@@ -309,7 +309,7 @@ async def test_s_lhu(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(1, "ps")
 
-    rf = get_registerfile(dut)
+    rf = rv32imc.get_registerfile(dut)
     rf["x6"] = 0x100
     set_registerfile(dut, rf)
 
@@ -320,12 +320,28 @@ async def test_s_lhu(dut) -> None:
     assert 0 == dut.data_wr.value
     assert 0b0010 == dut.data_be.value
     assert 0x100 + 1 == dut.data_addr.value
-    assert -2 & 0xFFFF_FFFF == get_registerfile(dut)["x5"]
+    assert -2 & 0xFFFF_FFFF == rv32imc.get_registerfile(dut)["x5"]
+
+    await rv32imc.exec_nop(dut)
+
+@cocotb.test()
+async def test_misc_fence_iorw_iorw(dut) -> None:
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    await Timer(1, "ps")
+
+    rf_initial = rv32imc.get_registerfile(dut)
+
+    instr = 0x0ff0000f # fence iorw, iorw
+    await rv32imc.exec_instr(dut, instr)
+
+    rf_end = rv32imc.get_registerfile(dut)
+    assert rf_initial == rf_end, "Unchanged register file"
 
     await rv32imc.exec_nop(dut)
 
 # TODO: Acknoweldge the stores
 # TODO: Acknoweldge the loads
+
 
 def test_runner():
     import os
