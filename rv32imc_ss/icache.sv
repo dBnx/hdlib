@@ -1,6 +1,9 @@
 /// Directly mapped, write-through cache. Has a latency of one for cache hits
-/// and to pass the write through on a miss. Access to an active cacheline 
+/// and to pass the write through on a miss. Access to an active cacheline
 /// are answered in the same cycle.
+///
+/// Assumes that the internal ram _always_ has a lower or the same latency as
+/// the external interface!
 ///
 /// FIXME: Currently ignores writes and BE.
 ///       Only focus on use as ICache right now. Will be extended later.
@@ -16,15 +19,21 @@ module icache #(
     input  bit reset,
 
     // <<<< Internal I/O >>>>
+    // Setting either will initiate a request. Issuing requests while one is in flight are
+    // undefined behvariour.
     input  bit                   int_wr,
     input  bit                   int_rd,
+    // Termination signals
     output bit                   int_ack,
     output bit                   int_error,
+    // In the same cyle as the request is submitted one of the following is set for 1c
     output bit                   int_hit,
     output bit                   int_miss,
+    // Must be stable until either ack or error is asserted
     input  bit [  ADDR_SIZE-1:0] int_addr, // Indexes words, not bytes
     input  bit [ByteEnWidth-1:0] int_be,
     input  bit [  WORD_SIZE-1:0] int_data_i,
+    // Stable only for the same cycle as either ack or error is asserted
     output bit [  WORD_SIZE-1:0] int_data_o,
 
     // <<<< External I/O >>>>
@@ -144,6 +153,7 @@ module icache #(
     bit [WordsPerLine-1:0][  WORD_SIZE-1:0] cc_data_w;
 
     bit                           cc_state_active;
+    bit                           cc_state_active_2stage;
     bit [WORDS_PER_LINE_LOG2-1:0] cc_state_word;
 
     bit int_ack_sync;
@@ -155,10 +165,22 @@ module icache #(
             cc_wr <= 0;
             ext_wr <= 0;
             int_ack_sync <= 0;
-        end else if(hit && cache_line_active) begin
+
+            for (int l = 0; l < Lines; l = l + 1) begin
+                for (int w = 0; w < Ways; w = w + 1) begin
+                    metadata[l][w].valid    <= 0;
+                    metadata[l][w].dirty    <= 1'bX;
+                    metadata[l][w].lfu      <= 'X;
+                    metadata[l][w].addr_tag <= 'X;
+                end
+            end
+
+        end else if(hit && cache_line_active && !cc_state_active_2stage) begin
             // Handled by int_ack_async
             // -> we don't have to do anything
-        end else if(hit && !cache_line_active) begin
+            int_ack_sync <= 0;
+
+        end else if(hit && !cache_line_active && !cc_state_active_2stage) begin
             // We have the cache line, but it's not the currently active one
             // So we have to activate it first with a latency of 1
             int_ack_sync <= 1;
@@ -171,7 +193,7 @@ module icache #(
         end else begin
             // TODO: Increase cc_addr, request, update cache lines and then
             //       report back
-            if(ext_ack && cc_state_word == '1) begin
+            if(cc_state_active_2stage && cc_ack) begin
                 // Cache line filling finished
                 // - Reset SM
                 // - Update cache line valid
@@ -179,12 +201,27 @@ module icache #(
 
                 // Reset internal SM
                 cc_state_active <= 0;
+                cc_state_active_2stage <= 0;
                 cc_state_word <= 0;
                 cc_wr <= 0;
+
+                // cc_be <= 0;
+                cc_data_w <= 0;
 
                 // Inform internal IF
                 int_ack_sync <= 1;
                 // TODO: Check if it matches with memory megafunction delay
+            end else if(cc_state_active_2stage && !cc_ack) begin
+                // End request
+                cc_wr <= 0;
+
+            end else if(cc_state_active && ext_ack && cc_state_word == '1) begin
+                // Cache line filling finished
+                // - Update SM
+                // - Update Metadata
+
+                // Reset internal SM
+                cc_state_active_2stage <= 1;
 
                 // Update Cache Line Metadata
                 metadata[int_addr_parts.index][way_index].valid    <= 1'b1;
@@ -198,9 +235,15 @@ module icache #(
                     end
                 end
 
+                // Read current feedback
+                cc_wr <= 1;
+                cc_addr.index <= int_addr_parts.index;
+                cc_addr.way   <= way_index;
+                cc_data_w[cc_state_word] <= ext_data_i;
+
                 // FIXME: Register address and write the registered part here
                 //        - maybe even update active_cache_line and promoting it to a reg?
-            end else if(ext_ack) begin
+            end else if(cc_state_active && ext_ack) begin
                 // Cache line filling up ..
                 // - Keep stalling int
                 // - Keep increasing offset
@@ -209,6 +252,7 @@ module icache #(
                 cc_state_word <= cc_state_word + 1;
 
                 // Send next command
+                int_ack_sync <= 0;
                 ext_rd <= 1;
                 ext_wr <= 0;
                 ext_be <= '1;
@@ -218,14 +262,7 @@ module icache #(
                 cc_wr <= 1;
                 cc_addr.index <= int_addr_parts.index;
                 cc_addr.way   <= way_index;
-                cc_be    [int_addr_parts.word] <= {ByteEnWidth{1'b1}};
-                cc_data_w[int_addr_parts.word] <= ext_data_i;
-                // Clear other byte enable
-                for (int i = 0; i < WordsPerLine; i = i + 1) begin
-                    if(i != int'(int_addr_parts.word)) begin
-                        cc_be[i] <= 0;
-                    end
-                end
+                cc_data_w[cc_state_word] <= ext_data_i;
 
                 // FIXME: We could also loob back data_w and remove BE lines
             end else if(miss && (int_rd || int_wr)) begin
@@ -260,7 +297,21 @@ module icache #(
             // -
         end
     end
+
+    always_ff @( posedge clk or posedge reset ) begin : ram_set_write_be
+        if(reset) begin
+            cc_be <= 0;
+        end else begin
+            for (int i = 0; i < WordsPerLine; i = i + 1) begin
+                cc_be[i] <= (i == int'(cc_state_word)) ? {ByteEnWidth{1'b1}} : 0;
+            end
+        end
+    end
+
     assign ext_addr = ext_addr_parts;
+
+    bit                   ram_ack;
+    bit                   ram_ack_reset;
 
     bit                   cache_ack; // TODO
     cache_block_addr_t    cache_addr;

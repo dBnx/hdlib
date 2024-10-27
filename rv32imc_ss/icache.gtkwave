@@ -1,19 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sun Oct 27 12:59:50 2024
+[*] Sun Oct 27 16:56:26 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/icache/dump.vcd"
-[dumpfile_mtime] "Sun Oct 27 12:59:41 2024"
-[dumpfile_size] 18911
+[dumpfile_mtime] "Sun Oct 27 16:56:01 2024"
+[dumpfile_size] 44363
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/icache.gtkwave"
 [timestart] 0
 [size] 1920 1033
 [pos] 1895 23
-*-15.900000 390000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.699999 378700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] icache.
 [sst_width] 273
 [signals_width] 316
 [sst_expanded] 1
-[sst_vpaned_height] 221
+[sst_vpaned_height] 141
 @24
 [color] 7
 icache.ADDR_SIZE[31:0]
@@ -31,10 +32,8 @@ icache.LINES_LOG2[31:0]
 icache.LineWidth[31:0]
 [color] 7
 icache.Lines[31:0]
-@25
 [color] 7
 icache.WAYS_LOG2[31:0]
-@24
 [color] 7
 icache.WORDS_PER_LINE_LOG2[31:0]
 [color] 7
@@ -67,8 +66,10 @@ icache.int_addr[31:0]
 [color] 3
 icache.int_data_i[31:0]
 icache.int_data_o[31:0]
-@28
+@29
+[color] 6
 icache.int_hit
+[color] 6
 icache.int_miss
 @200
 -External - IF
@@ -93,9 +94,12 @@ icache.ext_data_i[31:0]
 [color] 2
 icache.cc_state_active
 [color] 2
+icache.cc_state_active_2stage
+[color] 2
 icache.cc_state_word[1:0]
 icache.cache_ack
 icache.cache_line_active
+icache.cc_wr
 icache.cc_ack
 @22
 icache.cc_be[0][3:0]
@@ -107,11 +111,20 @@ icache.cc_data_w[1][31:0]
 icache.cc_data_w[2][31:0]
 icache.cc_data_w[3][31:0]
 @28
-icache.cc_wr
 [color] 3
 icache.hit
 [color] 3
 icache.miss
 icache.way_index[0]
+icache.int_ack_async
+icache.int_ack_sync
+@200
+-STRUCTS
+-cache_line_out
+@22
+icache.cache_line_out.words[0][31:0]
+icache.cache_line_out.words[1][31:0]
+icache.cache_line_out.words[2][31:0]
+icache.cache_line_out.words[3][31:0]
 [pattern_trace] 1
 [pattern_trace] 0
