@@ -1,0 +1,117 @@
+[*]
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Sun Oct 27 12:59:50 2024
+[*]
+[dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/icache/dump.vcd"
+[dumpfile_mtime] "Sun Oct 27 12:59:41 2024"
+[dumpfile_size] 18911
+[savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/icache.gtkwave"
+[timestart] 0
+[size] 1920 1033
+[pos] 1895 23
+*-15.900000 390000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 316
+[sst_expanded] 1
+[sst_vpaned_height] 221
+@24
+[color] 7
+icache.ADDR_SIZE[31:0]
+[color] 7
+icache.AddrTagWidth[31:0]
+[color] 7
+icache.ByteEnWidth[31:0]
+[color] 7
+icache.CacheLineBE[31:0]
+[color] 7
+icache.CacheLineTagW[31:0]
+[color] 7
+icache.LINES_LOG2[31:0]
+[color] 7
+icache.LineWidth[31:0]
+[color] 7
+icache.Lines[31:0]
+@25
+[color] 7
+icache.WAYS_LOG2[31:0]
+@24
+[color] 7
+icache.WORDS_PER_LINE_LOG2[31:0]
+[color] 7
+icache.WORD_SIZE[31:0]
+[color] 7
+icache.Ways[31:0]
+[color] 7
+icache.WordsPerLine[31:0]
+@200
+-SYSCON
+@28
+[color] 1
+icache.reset
+icache.clken
+icache.clk
+@200
+-Internal - IF
+@28
+[color] 2
+icache.int_rd
+[color] 2
+icache.int_wr
+[color] 2
+icache.int_ack
+icache.int_error
+@22
+icache.int_be[3:0]
+[color] 3
+icache.int_addr[31:0]
+[color] 3
+icache.int_data_i[31:0]
+icache.int_data_o[31:0]
+@28
+icache.int_hit
+icache.int_miss
+@200
+-External - IF
+@28
+[color] 2
+icache.ext_rd
+[color] 2
+icache.ext_wr
+[color] 2
+icache.ext_ack
+icache.ext_error
+@22
+icache.ext_be[3:0]
+[color] 3
+icache.ext_addr[31:0]
+[color] 3
+icache.ext_data_o[31:0]
+icache.ext_data_i[31:0]
+@200
+-Internals
+@28
+[color] 2
+icache.cc_state_active
+[color] 2
+icache.cc_state_word[1:0]
+icache.cache_ack
+icache.cache_line_active
+icache.cc_ack
+@22
+icache.cc_be[0][3:0]
+icache.cc_be[1][3:0]
+icache.cc_be[2][3:0]
+icache.cc_be[3][3:0]
+icache.cc_data_w[0][31:0]
+icache.cc_data_w[1][31:0]
+icache.cc_data_w[2][31:0]
+icache.cc_data_w[3][31:0]
+@28
+icache.cc_wr
+[color] 3
+icache.hit
+[color] 3
+icache.miss
+icache.way_index[0]
+[pattern_trace] 1
+[pattern_trace] 0
