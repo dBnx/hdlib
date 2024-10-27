@@ -339,9 +339,6 @@ async def test_misc_fence_iorw_iorw(dut) -> None:
 
     await rv32imc.exec_nop(dut)
 
-# TODO: Acknoweldge the stores
-# TODO: Acknoweldge the loads
-
 
 def test_runner():
     import os

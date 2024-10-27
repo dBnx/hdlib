@@ -87,7 +87,7 @@ module ram_dp_handshake #(
         .addressstall_b (1'b0),
         .byteena_a (p0_be),
         .byteena_b (p1_be),
-        .clock1 (1'b1),
+        .clock1   (clk),
         .clocken1 (1'b1),
         .clocken2 (1'b1),
         .clocken3 (1'b1),

@@ -5,9 +5,12 @@ module rv32imc_ss_handshake_w_rom #(
     parameter bit [31:0] INITIAL_SP = 32'h7FFFFFF0,
     parameter int        RAM_DEPTH32 = 1024,  // Should not be more than 512 with default mapping (2kiB)
     parameter int        ROM_DEPTH32 = 1024,  // (2kiB)
-    // parameter string ROM_FILE = "kernel.portecho.hex"
     // parameter string ROM_FILE = "kernel.test.irom.iram.mmr.mem"
-    parameter string ROM_FILE = "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/kernel.test.irom.iram.mmr.mem"
+    parameter
+`ifndef ALTERA_MAX10
+    string
+`endif
+    ROM_FILE = "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/kernel.test.irom.iram.mmr.mem"
 ) (
     input logic clk,
     input logic reset,
@@ -29,8 +32,8 @@ module rv32imc_ss_handshake_w_rom #(
     input  logic [31:0] data_data_i,
 
     // TODO: GPIO
-    output logic [31:0] gpio_o[GpioN],
-    input logic [31:0] gpio_i[GpioN],
+    output logic [31:0]      gpio_o[GpioN],
+    input  logic [31:0]      gpio_i[GpioN],
     output logic [GpioN-1:0] gpio_o_update,
     output logic [GpioN-1:0] gpio_i_update
 );

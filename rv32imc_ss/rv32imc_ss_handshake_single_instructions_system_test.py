@@ -153,6 +153,8 @@ async def test_ecall_mret(dut) -> None:
     dut.inst_csrs.csr_mstatus_mie.value  = 1; # Set   MIE 
     dut.inst_csrs.csr_mstatus_mpie.value = 0; # Reset MPIE 
 
+    minstret_initial = dut.inst_csrs.csr_minstret.value
+
     # Get into a context handler
     instr = 0x00000073 # ECALL
     await exec_instr(dut, instr)
@@ -170,6 +172,9 @@ async def test_ecall_mret(dut) -> None:
 
     pc_after_return = get_pc(dut)["current"]
     assert pc_start == pc_after_return
+
+    minstret_final = dut.inst_csrs.csr_minstret.value
+    assert minstret_initial == minstret_final
 
     await exec_nop(dut)
 

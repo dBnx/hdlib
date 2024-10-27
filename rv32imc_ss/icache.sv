@@ -10,7 +10,7 @@
 module icache #(
     parameter int ADDR_SIZE = 32,
     parameter int WORD_SIZE = 32,
-    parameter int LINES_LOG2 = 4,
+    parameter int LINES_LOG2 = 5,
     parameter int WAYS_LOG2 = 0, // Not yet implemented
     parameter int WORDS_PER_LINE_LOG2 = 2
 ) (
