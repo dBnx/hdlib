@@ -1,21 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sun Oct 27 20:41:51 2024
+[*] Mon Oct 14 19:35:15 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake_w_rom/dump.vcd"
-[dumpfile_mtime] "Sun Oct 27 20:39:34 2024"
-[dumpfile_size] 43004
+[dumpfile_mtime] "Mon Oct 14 19:31:49 2024"
+[dumpfile_size] 22642
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_w_rom.gtkwave"
 [timestart] 0
 [size] 1920 1033
-[pos] 1945 0
-*-15.499999 14500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] rv32imc_ss_handshake_w_rom.
-[treeopen] rv32imc_ss_handshake_w_rom.inst_hart.
+[pos] -27 -24
+*-12.599999 11110 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 273
 [signals_width] 292
 [sst_expanded] 1
-[sst_vpaned_height] 214
+[sst_vpaned_height] 307
 @22
 [color] 7
 rv32imc_ss_handshake_w_rom.BASE_END_MMR[31:0]
@@ -76,10 +74,8 @@ rv32imc_ss_handshake_w_rom.data_err
 @22
 [color] 3
 rv32imc_ss_handshake_w_rom.data_addr[31:0]
-@28
 [color] 3
 rv32imc_ss_handshake_w_rom.data_be[3:0]
-@22
 [color] 3
 rv32imc_ss_handshake_w_rom.data_data_i[31:0]
 [color] 3
@@ -120,7 +116,6 @@ rv32imc_ss_handshake_w_rom.data_data_o_int[31:0]
 rv32imc_ss_handshake_w_rom.enable_ipath_rom
 [color] 2
 rv32imc_ss_handshake_w_rom.enable_dpath_rom
-[color] 6
 rv32imc_ss_handshake_w_rom.enable_dpath_mmr
 [color] 3
 rv32imc_ss_handshake_w_rom.enable_dpath_ram
@@ -128,54 +123,31 @@ rv32imc_ss_handshake_w_rom.enable_dpath_internal
 @200
 -iROM - Internal
 @22
-rv32imc_ss_handshake_w_rom.rom_ipath_addr[9:0]
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_ipath_addr[10:0]
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_dpath_addr[10:0]
 @29
-rv32imc_ss_handshake_w_rom.instr_ack_rom
-@22
-rv32imc_ss_handshake_w_rom.rom_dpath_addr[9:0]
-@28
-rv32imc_ss_handshake_w_rom.rom_dpath_ack
+[color] 2
+rv32imc_ss_handshake_w_rom.rom_ack
 @200
 -iRAM - Internal
 @28
 [color] 3
 rv32imc_ss_handshake_w_rom.ram_ack
+@22
+[color] 3
+rv32imc_ss_handshake_w_rom.ram_dpath_addr[7:0]
 @200
 -MMR - Internal
 @28
-[color] 6
+rv32imc_ss_handshake_w_rom.gpio_enable
 rv32imc_ss_handshake_w_rom.mmr_ack
 @22
-[color] 6
 rv32imc_ss_handshake_w_rom.mmr_data_o[31:0]
-[color] 6
 rv32imc_ss_handshake_w_rom.mmr_dpath_addr[8:0]
 @28
-[color] 6
-rv32imc_ss_handshake_w_rom.gpio_enable
-@200
--Regs - HART
-@22
-rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[3][31:0]
-rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[5][31:0]
-rv32imc_ss_handshake_w_rom.inst_hart.inst_registerfile.registerfile[6][31:0]
-[color] 1
-rv32imc_ss_handshake_w_rom.inst_hart.inst_pc.pc_current[31:0]
-@200
--Temp
-@22
-[color] 7
-gpio_i[0][31:0]
-[color] 7
-gpio_o[0][31:0]
-[color] 7
-gpio_i[1][31:0]
-[color] 7
-gpio_o[1][31:0]
-[color] 7
-gpio_i[2][31:0]
-[color] 7
-gpio_o[2][31:0]
-rv32imc_ss_handshake_w_rom.data_data_i_int_rom[31:0]
+rv32imc_ss_handshake_w_rom.gpio_addr[2:0]
+rv32imc_ss_handshake_w_rom.enable_dpath_internal
 [pattern_trace] 1
 [pattern_trace] 0

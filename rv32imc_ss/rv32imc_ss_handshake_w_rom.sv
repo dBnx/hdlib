@@ -65,7 +65,7 @@ module rv32imc_ss_handshake_w_rom #(
   bit [29:0] instr_addr32_int;
   bit [29:0] data_addr32_int;
   assign instr_addr32_int = instr_addr_int[31:2];
-  assign data_addr32_int  = data_addr_int[31:2];
+  assign data_addr32_int  = data_addr_int [31:2];
 
   // Is peripheral slected by partial address decoding? If not, then we assume it's external.
   logic enable_ipath_rom;
@@ -109,32 +109,42 @@ module rv32imc_ss_handshake_w_rom #(
   logic [31:0] data_data_i_int;
 
   // iROM --------------------------------------------------------------------
-  // TODO: Remove this:
-  logic        rom_ack;  // for data path
-
-  bit   [31:0] rom [ROM_DEPTH32] /* synthesis ramstyle = "no_rw_check, M9K" */;
-  initial begin
-    $readmemh(ROM_FILE, rom);
-  end
 
   // iROM I Path -------------------------------------------------------------
-  bit instr_ack_rom = 1;
+  bit instr_ack_rom;
   bit [31:0] instr_data_i_int_rom;
 
 
   // iROM D Path -------------------------------------------------------------
+  bit rom_dpath_ack;
+  bit [31:0] data_data_i_int_rom;
 
-  always_ff @(posedge clk or posedge reset) begin
-    if (reset) begin
-      rom_ack <= 0;
-    end else begin
-      if (data_req_int && enable_dpath_rom) begin
-        rom_ack <= 1;
-      end else begin
-        rom_ack <= 0;
-      end
-    end
-  end
+  ram_dp_handshake #(
+      .ADDR_WIDTH($clog2(ROM_DEPTH32)),
+      .BYTES(4),
+      .INIT_FILE(ROM_FILE)
+  ) inst_rom (
+      .clk  (clk),
+      .clken(1'b1),
+
+      // DPath
+      .p0_we   (1'b0),
+      .p0_re   (data_req_int && enable_dpath_rom && !data_wr_int),
+      .p0_ack  (rom_dpath_ack),
+      .p0_addr (rom_dpath_addr),
+      .p0_be   (data_be),
+      .p0_wdata(data_data_o_int),
+      .p0_rdata(data_data_i_int_rom),
+
+      // IPath
+      .p1_we   (1'b0),
+      .p1_re   (instr_req_int && enable_ipath_rom),
+      .p1_ack  (instr_ack_rom),
+      .p1_addr (rom_ipath_addr),
+      .p1_be   (4'hF),
+      .p1_wdata(32'h0),
+      .p1_rdata(instr_data_i_int_rom)
+  );
 
   // iRAM --------------------------------------------------------------------
   // TODO: Change declaration of location + size to be more intuitive
@@ -247,9 +257,7 @@ module rv32imc_ss_handshake_w_rom #(
 
   // MUX IPATH ---------------------------------------------------------------
 
-  always_comb begin
-    instr_data_i_int_rom = enable_ipath_rom ? rom[rom_ipath_addr] : instr_data_i;
-
+  always_comb begin : assign_internal_instruction_bus
     if(enable_ipath_rom) begin
       instr_data_i_int = instr_data_i_int_rom;
       instr_ack_int    = instr_ack_rom;
@@ -274,8 +282,8 @@ module rv32imc_ss_handshake_w_rom #(
         enable_dpath_rom, enable_dpath_ram, enable_dpath_mmr
       })
         3'b100: begin
-          data_ack_int = rom_ack;
-          data_data_i_int = rom[rom_dpath_addr];
+          data_ack_int = rom_dpath_ack;
+          data_data_i_int = data_data_i_int_rom;
         end
         3'b010: begin
           data_ack_int = ram_ack;

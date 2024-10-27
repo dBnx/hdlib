@@ -36,6 +36,11 @@ module ram_dp_handshake #(
   // TODO: Wire ACK through 
   // TODO: Implement read enable
 
+  initial begin
+    p0_ack = 0;
+    p1_ack = 0;
+  end
+
 `ifndef ALTERA_MAX10
   reg [WIDTH-1:0] ram[WORDS];
 
@@ -71,6 +76,10 @@ module ram_dp_handshake #(
       // Update acknowledgment signals
       p0_ack <= p0_re | p0_we;
       p1_ack <= p1_re | p1_we;
+  end
+
+  initial begin
+    $readmemh(INIT_FILE, ram);
   end
 
 `else

@@ -40,7 +40,7 @@ async def test_run_program_in_irom_utilize_iram_mmr(dut):
     dut.gpio_i[0].value = 0x12345678
     program_runner = cocotb.start_soon(run_program(
         dut.inst_hart, [], memory_regions_are_valid_instr=True, lsu_watcher_cb=None))
-    timeout = ClockCycles(dut.clk, 30)
+    timeout = ClockCycles(dut.clk, 50)
     await First(program_runner, timeout)
     await Timer(1, "ns")  # For better traces
 
