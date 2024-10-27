@@ -128,15 +128,13 @@ module icache #(
         end
     end
 
-    bit    cache_line_active; // TODO: int_ack_async
+    bit    cache_line_active;
     assign cache_line_active = last_addr.tag == int_addr_parts.tag
                           && last_addr.index == int_addr_parts.index;
 
     bit int_ack_async;
     assign int_ack_async = cache_line_active && hit && (int_rd || int_wr);
 
-    // bit int_hit_sync, int_hit_async; // TODO: Use
-    // assign int_hit_async = cache_line_active && hit && (int_rd || int_wr);
     assign int_hit = hit && (int_rd || int_wr);
     assign int_miss = miss && (int_rd || int_wr);
 

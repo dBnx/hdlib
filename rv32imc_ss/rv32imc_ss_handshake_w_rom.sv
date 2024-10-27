@@ -5,6 +5,9 @@ module rv32imc_ss_handshake_w_rom #(
     parameter bit [31:0] INITIAL_SP = 32'h7FFFFFF0,
     parameter int        RAM_DEPTH32 = 1024,  // Should not be more than 512 with default mapping (2kiB)
     parameter int        ROM_DEPTH32 = 1024,  // (2kiB)
+    parameter int        GPIO_N      = 32,
+    parameter bit        EN_ICACHE   = 0, // TODO
+    parameter bit        EN_DCACHE   = 0, // TODO
     // parameter string ROM_FILE = "kernel.test.irom.iram.mmr.mem"
     parameter
 `ifndef ALTERA_MAX10
@@ -32,10 +35,10 @@ module rv32imc_ss_handshake_w_rom #(
     input  logic [31:0] data_data_i,
 
     // TODO: GPIO
-    output logic [31:0]      gpio_o[GpioN],
-    input  logic [31:0]      gpio_i[GpioN],
-    output logic [GpioN-1:0] gpio_o_update,
-    output logic [GpioN-1:0] gpio_i_update
+    output logic       [31:0] gpio_o[GPIO_N],
+    input  logic       [31:0] gpio_i[GPIO_N],
+    output logic [GPIO_N-1:0] gpio_o_update,
+    output logic [GPIO_N-1:0] gpio_i_update
 );
   // TODO: Ensure rest is also connected
   assign data_wr = data_wr_int;
@@ -56,8 +59,7 @@ module rv32imc_ss_handshake_w_rom #(
   localparam int RamW = $clog2(RAM_DEPTH32);
   localparam int MmrW = $clog2(MMR_DEPTH32);
 
-  localparam int GpioN = 8;
-  localparam int GpioW = $clog2(GpioN);
+  localparam int GpioW = $clog2(GPIO_N);
 
   // Helper addresses, as we don't care about anything under a 32B alignment (width of BE)
   bit [29:0] instr_addr32_int;
@@ -86,11 +88,11 @@ module rv32imc_ss_handshake_w_rom #(
   bit [RamW-1:0] ram_ipath_addr;
   bit [RamW-1:0] ram_dpath_addr;
   bit [MmrW-1:0] mmr_dpath_addr;
-  assign rom_ipath_addr = enable_ipath_rom ? instr_addr32_int[RomW-1:0] : 0;
-  assign rom_dpath_addr = enable_dpath_rom ? data_addr32_int [RomW-1:0] : 0;
-  assign ram_ipath_addr = enable_ipath_ram ? instr_addr32_int[RamW-1:0] : 0;
-  assign ram_dpath_addr = enable_dpath_ram ? data_addr32_int [RamW-1:0] : 0;
-  assign mmr_dpath_addr = enable_dpath_mmr ? data_addr32_int [MmrW-1:0] : 0;
+  assign rom_ipath_addr = enable_ipath_rom ? instr_addr32_int[RomW-1:0] : '0;
+  assign rom_dpath_addr = enable_dpath_rom ? data_addr32_int [RomW-1:0] : '0;
+  assign ram_ipath_addr = enable_ipath_ram ? instr_addr32_int[RamW-1:0] : '0;
+  assign ram_dpath_addr = enable_dpath_ram ? data_addr32_int [RamW-1:0] : '0;
+  assign mmr_dpath_addr = enable_dpath_mmr ? data_addr32_int [MmrW-1:0] : '0;
 
   logic        instr_req_int;
   logic        instr_ack_int;
@@ -181,7 +183,7 @@ module rv32imc_ss_handshake_w_rom #(
   // TODO: Byte enable for RAM & GPIO writes
 
   assign gpio_enable = enable_dpath_mmr && mmr_dpath_addr[MmrW-1:3] == MmrOffsetGpio[MmrW-1-3:0];
-  assign gpio_addr   = mmr_dpath_addr[2:0];
+  assign gpio_addr   = mmr_dpath_addr[GpioW-1:0];
   bit mmr_req;
   assign mmr_req = data_req_int && enable_dpath_mmr;
   always_ff @(posedge clk or posedge reset) begin
@@ -220,7 +222,7 @@ module rv32imc_ss_handshake_w_rom #(
 
   generate
     genvar i;
-    for (i = 0; i < GpioN; i = i + 1) begin : gpio_update_gen
+    for (i = 0; i < GPIO_N; i = i + 1) begin : gpio_update_gen
       always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
           gpio_o_update[i] <= 0;

@@ -1,7 +1,12 @@
 module ram_dp_handshake #(
     parameter int ADDR_WIDTH = 10,
     parameter int BYTES      =  4,
-    parameter int WIDTH      = BYTES * BYTE_WIDTH
+    parameter int WIDTH      = BYTES * BYTE_WIDTH,
+    parameter
+`ifndef ALTERA_MAX10
+    string
+`endif
+    INIT_FILE = ""
 ) (
     input  bit                  clk,
     input  bit                  clken,
@@ -69,7 +74,6 @@ module ram_dp_handshake #(
   end
 
 `else
-
   altsyncram altsyncram_component (
         .clock0    (clk),
         .clocken0  (clken),
@@ -81,27 +85,28 @@ module ram_dp_handshake #(
         .wren_b (p1_we),
         .q_a (p0_rdata),
         .q_b (p1_rdata),
+        .byteena_a (p0_be),
+        .byteena_b (p1_be),
+        .rden_a (p0_re),
+        .rden_b (p1_re),
         .aclr0 (1'b0),
         .aclr1 (1'b0),
         .addressstall_a (1'b0),
         .addressstall_b (1'b0),
-        .byteena_a (p0_be),
-        .byteena_b (p1_be),
-        .clock1   (clk),
+        .clock1   (1'b1),
         .clocken1 (1'b1),
         .clocken2 (1'b1),
         .clocken3 (1'b1),
-        .eccstatus (),
-        .rden_a (p0_re),
-        .rden_b (p1_re)
+        .eccstatus ()
   );
   defparam
     altsyncram_component.address_reg_b = "CLOCK0",
+    altsyncram_component.byteena_reg_b = "CLOCK0",
+    altsyncram_component.indata_reg_b = "CLOCK0",
     altsyncram_component.clock_enable_input_a = "NORMAL",
     altsyncram_component.clock_enable_input_b = "NORMAL",
     altsyncram_component.clock_enable_output_a = "BYPASS",
     altsyncram_component.clock_enable_output_b = "BYPASS",
-    altsyncram_component.indata_reg_b = "CLOCK0",
     altsyncram_component.intended_device_family = "MAX 10",
     altsyncram_component.lpm_type = "altsyncram",
     altsyncram_component.numwords_a = WORDS,
@@ -122,8 +127,8 @@ module ram_dp_handshake #(
     altsyncram_component.width_b = WIDTH,
     altsyncram_component.width_byteena_a = BYTES,
     altsyncram_component.width_byteena_b = BYTES,
+    altsyncram_component.init_file = INIT_FILE,
     altsyncram_component.wrcontrol_wraddress_reg_b = "CLOCK0";
-		// altsyncram_component.init_file = "../hdlib/rv32imc_ss/bootloader.mif",
 
   always_ff @(posedge clk) begin
       p0_ack <= p0_re | p0_we;
