@@ -180,7 +180,7 @@ async def test_different_cache_lines(dut) -> None:
     
 
 @cocotb.test()
-async def test_cach_line_eviction(dut) -> None:
+async def test_cache_line_eviction(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset_dut(dut)
@@ -214,137 +214,62 @@ async def test_cach_line_eviction(dut) -> None:
     assert data_o == 0x9001
     assert cycles == 0
 
-# TODO: Test reset
-
-    # await external
-
-# ------------------------------------------------------------------------------
-
-def prepare_if_int_issue(dut, addr: int, data_wr: int | None = None):
-    # assert dut.int_ack.value == 0, "USER ERROR: Can't issue new cmd yet"
-    # assert dut.int_error.value == 0, "USER ERROR: Can't issue new cmd yet (ERROR)"
-
-    dut.int_rd.value = 1 if data_wr is None else 0
-    dut.int_wr.value = 0 if data_wr is None else 1
-    dut.int_addr.value = addr
-    dut.int_be.value = 0xF
-    dut.int_data_i.value = data_wr if data_wr is not None else 0
-
-def prepare_if_int_wait(dut):
-    # assert dut.int_ack.value == 0, "USER ERROR: Can't issue new cmd yet"
-    dut.int_wr.value = 0
-    dut.int_rd.value = 0
-
-def prepare_if_ext_service(dut):
-    dut.ext_ack.value = 1
-    dut.ext_data_i.value = dut.ext_addr.value
-
-def prepare_if_ext_stall(dut):
-    dut.ext_ack.value = 0
-
-async def nop(dut):
-    prepare_if_int_wait(dut)
-    prepare_if_ext_stall(dut)
-    await RisingEdge(dut.clk)
-
-async def serve_single_word(dut, latency_max: int = 2):
-    if dut.ext_rd.value == 0:
-        await nop(dut)
-        return
-
-    for _ in range(2):
-        await nop(dut)
-    
-    prepare_if_int_wait(dut)
-    prepare_if_ext_service(dut)
-    await RisingEdge(dut.clk)
-    prepare_if_int_wait(dut)
-    prepare_if_ext_stall(dut)
-
-
-async def request_and_serve_assert_hit(dut, addr: int, latency_max: int = 2):
-    prepare_if_int_issue(dut, addr=addr)
-    prepare_if_ext_stall(dut)
-    await Timer(1, "ps")
-    assert True # TODO
-
-    await RisingEdge(dut.clk)
-    prepare_if_int_wait(dut)
-    prepare_if_ext_stall(dut)
-
-async def request_and_serve_assert_miss(dut, addr: int, latency_max: int = 2):
-    prepare_if_int_issue(dut, addr=addr)
-    prepare_if_ext_stall(dut)
-    await RisingEdge(dut.clk)
-
-    await serve_single_word(dut, latency_max)
-    await serve_single_word(dut, latency_max)
-    await serve_single_word(dut, latency_max)
-    await serve_single_word(dut, latency_max)
-
-# @cocotb.test()
-async def test_invalid_group(dut) -> None:
+@cocotb.test()
+async def test_cach_line_alternate_access(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     await reset_dut(dut)
 
-    await request_and_serve_assert_miss(dut, 0x1001)
+    external = cocotb.start_soon(external_service_requests(dut, max_latency=1))
+
+    await RisingEdge(dut.clk) # RMME
+
+
+    # Initial requests
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x2001)
     await RisingEdge(dut.clk)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x2001
+    assert cycles > 5
 
-    for _ in range(5):
-        await RisingEdge(dut.clk)
-
-    await request_and_serve_assert_hit(dut, 0x1003)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x8001 + 8)
     await RisingEdge(dut.clk)
-    
-    await nop(dut)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x8001 + 8
+    assert cycles > 5
 
-    await request_and_serve_assert_hit(dut, 0x1000)
+    # Every other request must be cached
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x2002)
     await RisingEdge(dut.clk)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x2002
+    assert cycles > 0 and cycles < 5
 
-    await request_and_serve_assert_hit(dut, 0x1002)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x8003 + 8)
     await RisingEdge(dut.clk)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x8003 + 8
+    assert cycles > 0 and cycles < 5
 
-    await nop(dut)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x2000)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x2000
+    assert cycles > 0 and cycles < 5
 
-    await request_and_serve_assert_miss(dut, 0x1004)
-    await RisingEdge(dut.clk)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x8000 + 8)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x8000 + 8
+    assert cycles > 0 and cycles < 5
 
-    for _ in range(5):
-        await RisingEdge(dut.clk)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x2003)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x2003
+    assert cycles > 0 and cycles < 5
 
-    return
-
-    prepare_if_int_issue(dut, addr=0x1001)
-    prepare_if_ext_stall(dut)
-    await RisingEdge(dut.clk)
-
-    await serve_single_word(dut, 2)
-    await serve_single_word(dut, 1)
-    await serve_single_word(dut, 2)
-    await serve_single_word(dut, 1)
-
-    prepare_if_int_issue(dut, addr=0x1003)
-    await RisingEdge(dut.clk)
-    await serve_single_word(dut, 1)
-
-    for _ in range(3):
-        await RisingEdge(dut.clk)
-
-    return
-    for _ in range(2):
-        prepare_if_int_wait(dut)
-        prepare_if_ext_stall(dut)
-        await RisingEdge(dut.clk)
-    
-    prepare_if_int_wait(dut)
-    prepare_if_ext_service(dut)
-    await RisingEdge(dut.clk)
-
-    for _ in range(3):
-        prepare_if_int_wait(dut)
-        prepare_if_ext_stall(dut)
-        await RisingEdge(dut.clk)
+    data_o, cycles = await internal_issue_and_await(dut, addr=0x8002 + 8)
+    cocotb.log.warning(f"Request took {cycles} cycles")
+    assert data_o == 0x8002 + 8
+    assert cycles > 0 and cycles < 5
 
 
 def test_runner():

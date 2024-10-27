@@ -1,20 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sun Oct 27 16:56:26 2024
+[*] Sun Oct 27 17:16:05 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/icache/dump.vcd"
-[dumpfile_mtime] "Sun Oct 27 16:56:01 2024"
-[dumpfile_size] 44363
+[dumpfile_mtime] "Sun Oct 27 17:08:18 2024"
+[dumpfile_size] 63999
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/icache.gtkwave"
 [timestart] 0
 [size] 1920 1033
 [pos] 1895 23
-*-17.699999 378700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.400000 747100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] icache.
+[treeopen] icache.ram_set_write_be.
 [sst_width] 273
 [signals_width] 316
 [sst_expanded] 1
-[sst_vpaned_height] 141
+[sst_vpaned_height] 133
 @24
 [color] 7
 icache.ADDR_SIZE[31:0]
@@ -66,7 +67,7 @@ icache.int_addr[31:0]
 [color] 3
 icache.int_data_i[31:0]
 icache.int_data_o[31:0]
-@29
+@28
 [color] 6
 icache.int_hit
 [color] 6
@@ -126,5 +127,43 @@ icache.cache_line_out.words[0][31:0]
 icache.cache_line_out.words[1][31:0]
 icache.cache_line_out.words[2][31:0]
 icache.cache_line_out.words[3][31:0]
+@200
+-metadata[0][0]
+@28
+icache.metadata[0][0].valid
+icache.metadata[0][0].dirty
+@22
+icache.metadata[0][0].addr_tag[25:0]
+@28
+icache.metadata[0][0].lfu[0]
+@200
+-metadata[1][0]
+@28
+icache.metadata[1][0].valid
+icache.metadata[1][0].dirty
+@22
+icache.metadata[1][0].addr_tag[25:0]
+@28
+icache.metadata[1][0].lfu[0]
+@200
+-metadata[2][0]
+@28
+icache.metadata[2][0].valid
+icache.metadata[2][0].dirty
+@22
+icache.metadata[2][0].addr_tag[25:0]
+@28
+icache.metadata[2][0].lfu[0]
+@200
+-int_addr_parts
+@22
+icache.int_addr_parts.tag[25:0]
+icache.int_addr_parts.index[3:0]
+@28
+icache.int_addr_parts.word[1:0]
+@201
+-END
+@22
+icache.int_addr[31:0]
 [pattern_trace] 1
 [pattern_trace] 0
