@@ -20,6 +20,7 @@ module rv32_mod_load_store_unit (
     output logic        valid,
     output logic        error,
     output logic        stall,
+    input  logic        stall_id,
 
     // External interface
     output logic        dext_req,
@@ -147,7 +148,8 @@ module rv32_mod_load_store_unit (
       stall <= 0;
       req_signed <= 0;
       req_size <= 0;
-    end else if (req) begin
+    end else if (req & !stall_id) begin
+      // If the ID stalls, we must still de-assert dext_req
       // Hold?
       dext_req  <= 1; // Reset after 1 clock
       dext_wr   <= wr;

@@ -48,6 +48,9 @@ module rv32imc_ss_handshake #(
     output bit [31:0] data_addr,
     output bit [31:0] data_data_o,
     input  bit [31:0] data_data_i
+
+    // input  bit        tele_cache_hit, // TODO
+    // input  bit        tele_cache_miss // TODO
 );
 
   // Instruction Fetcher -----------------------------------------------------
@@ -55,7 +58,7 @@ module rv32imc_ss_handshake #(
   bit [31:0] if_instruction;
   bit        if_valid;
   bit        if_instr_req;
-  assign instr_req = if_instr_req && !double_fault; // Just stop @ double fault
+  assign instr_req = if_instr_req && !double_fault && !reset; // Just stop @ double fault
   // assign if_address = pc_current;
 
   // Program Counter ( global pointer ) --------------------------------------
@@ -333,6 +336,7 @@ module rv32imc_ss_handshake #(
       .valid   (lsu_valid),
       .error   (lsu_error),
       .stall   (lsu_stall),
+      .stall_id(!if_valid),
 
       .dext_req (data_req),
       .dext_be  (data_be),
@@ -448,6 +452,13 @@ module rv32imc_ss_handshake #(
         .trap_handler_addr  (csr_trap_handler_addr),
         .trap_handler_active(in_trap_handler),
         .double_fault       (double_fault),
+
+        // <<<< Performance counters >>>>
+        // .hpcX(is_mem_or_io),
+        // .hpcX(is_compressed),
+        // .hpcX(br_is_jmp),
+        // .hpcX(tele_cache_hit),
+        // .hpcX(tele_cache_miss),
 
         // <<<< CSRs direct access >>>>
         .mstatus(csr_mstatus), // Replace by specific bits

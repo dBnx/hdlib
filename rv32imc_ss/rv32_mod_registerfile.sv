@@ -6,7 +6,7 @@ module rv32_mod_registerfile #(
     parameter logic        ASYNC_READ = 1
 ) (
     input  logic clk,
-    input  logic reset, // Currently unused!
+    input  logic reset,
 
     input  logic [ 4:0] read0_index,
     output logic [31:0] read0_data,
@@ -37,9 +37,14 @@ module rv32_mod_registerfile #(
       assign read1_data = read1_index == 0 ? 0 : registerfile[read1_index];
       assign read0_data = read0_index == 0 ? 0 : registerfile[read0_index];
     end else begin : gen_USE_SYNC_READ
-      always_ff @(posedge clk) begin
-        read1_data <= read1_index == 0 ? 0 : registerfile[read1_index];
-        read0_data <= read0_index == 0 ? 0 : registerfile[read0_index];
+      always_ff @(posedge clk or posedge reset) begin
+        if(reset) begin
+          read1_data <= 0;
+          read0_data <= 0;
+        end else begin
+          read1_data <= read1_index == 0 ? 0 : registerfile[read1_index];
+          read0_data <= read0_index == 0 ? 0 : registerfile[read0_index];
+        end
       end
     end
   endgenerate
