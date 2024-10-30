@@ -33,6 +33,7 @@ module rv32_mod_stallington (
     input  logic clk,
     input  logic reset,
 
+    input  logic if_stall,
     input  logic is_instr_new,
     input  logic is_mem_or_io,
     input  logic is_branch_taken,
@@ -58,6 +59,12 @@ module rv32_mod_stallington (
             enable_mut_rf = 1'b0;
             enable_mut_if_next = 1'b0;
             enable_mut_csr = 1'b0;
+        end else if(if_stall && !io_lsu_valid) begin
+            // We get stuck here if the LSU takes a lot of time
+            enable_mut_pc = 1'b0;
+            enable_mut_rf = 1'b0;
+            enable_mut_if_next = 1'b0;
+            enable_mut_csr = 1'b0;
         end else begin
             if (is_mem_or_io && io_lsu_valid) begin
                 // We can now continue
@@ -66,9 +73,9 @@ module rv32_mod_stallington (
                 enable_mut_if_next = 1'b1;
             end else if (is_instr_new && !is_mem_or_io) begin
                 // Other instructions are single cycle, directly continue
-                enable_mut_rf = 1;
-                enable_mut_pc = 1;
-                enable_mut_if_next = 1;
+                enable_mut_rf = 1'b1;
+                enable_mut_pc = 1'b1;
+                enable_mut_if_next = 1'b1;
             end else begin
                 // We neither have a new instruction, nor is one of the stall-able units
                 // finished.

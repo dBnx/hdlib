@@ -1,25 +1,25 @@
 `timescale 1ns / 1ps
 
 module rv32_mod_registerfile #(
-    parameter logic [31:0] INITIAL_GP = 32'h80000000,
-    parameter logic [31:0] INITIAL_SP = 32'h7FFFFFF0,
-    parameter logic        ASYNC_READ = 1
+    parameter bit [31:0] INITIAL_GP = 32'h80000000,
+    parameter bit [31:0] INITIAL_SP = 32'h7FFFFFF0,
+    parameter bit        ASYNC_READ = 1
 ) (
-    input  logic clk,
-    input  logic reset,
+    input  bit clk,
+    input  bit reset,
 
-    input  logic [ 4:0] read0_index,
-    output logic [31:0] read0_data,
+    input  bit [ 4:0] read0_index,
+    output bit [31:0] read0_data,
 
-    input  logic [ 4:0] read1_index,
-    output logic [31:0] read1_data,
+    input  bit [ 4:0] read1_index,
+    output bit [31:0] read1_data,
 
-    input  logic [ 4:0] write0_index,
-    input  logic [31:0] write0_data,
-    input  logic        write0_enable
+    input  bit [ 4:0] write0_index,
+    input  bit [31:0] write0_data,
+    input  bit        write0_enable
 );
 
-  logic [31:0] registerfile[31];
+  bit [31:0] registerfile[31];
 
   initial begin
     registerfile[1] = INITIAL_GP;

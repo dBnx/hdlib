@@ -44,9 +44,12 @@ module rv32_mod_instruction_fetch (
   */
 
   logic external_valid;
-  assign external_valid = instr_ack || !if_enable;
+  assign external_valid = instr_ack && !if_enable;
 
   logic [31:0] instr_buffer;
+  initial begin
+    instr_buffer = 32'h0000_0013; // NOP
+  end
 
 
   // Buffer output req and addr?
@@ -57,11 +60,11 @@ module rv32_mod_instruction_fetch (
     // Output current instr_data
     if (external_valid) begin
       if_instruction = instr_data_i;
-      if_valid       = 1;
+      if_valid       = 1'b1;
     end else begin
       // Handle instr_err
       if_instruction = instr_buffer;
-      if_valid       = 0; // Should be one or renamed to if_new?
+      if_valid       = 1'b0; // Should be one or renamed to if_new?
     end
   end
 

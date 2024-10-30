@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sun Oct 27 20:41:51 2024
+[*] Wed Oct 30 21:51:46 2024
 [*]
 [dumpfile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/build/rv32imc_ss_handshake_w_rom/dump.vcd"
-[dumpfile_mtime] "Sun Oct 27 20:39:34 2024"
-[dumpfile_size] 43004
+[dumpfile_mtime] "Wed Oct 30 21:47:07 2024"
+[dumpfile_size] 61242
 [savefile] "/home/dave/Sync/Projects/github/hdlib/rv32imc_ss/rv32imc_ss_handshake_w_rom.gtkwave"
 [timestart] 0
 [size] 1920 1033
 [pos] 1945 0
-*-15.499999 14500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.699999 70000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] rv32imc_ss_handshake_w_rom.
 [treeopen] rv32imc_ss_handshake_w_rom.inst_hart.
 [sst_width] 273
 [signals_width] 292
 [sst_expanded] 1
-[sst_vpaned_height] 214
+[sst_vpaned_height] 171
 @22
 [color] 7
 rv32imc_ss_handshake_w_rom.BASE_END_MMR[31:0]
@@ -97,10 +97,14 @@ rv32imc_ss_handshake_w_rom.clk
 @28
 rv32imc_ss_handshake_w_rom.instr_req_int
 rv32imc_ss_handshake_w_rom.instr_ack_int
+rv32imc_ss_handshake_w_rom.instr_ack_int_r
 rv32imc_ss_handshake_w_rom.instr_err_int
 @22
 rv32imc_ss_handshake_w_rom.instr_addr_int[31:0]
 rv32imc_ss_handshake_w_rom.instr_data_i_int[31:0]
+rv32imc_ss_handshake_w_rom.instr_data_i_int_r[31:0]
+@28
+rv32imc_ss_handshake_w_rom.inst_hart.instr_ack
 @200
 -DPath - I/O - Internal
 @28
@@ -129,7 +133,7 @@ rv32imc_ss_handshake_w_rom.enable_dpath_internal
 -iROM - Internal
 @22
 rv32imc_ss_handshake_w_rom.rom_ipath_addr[9:0]
-@29
+@28
 rv32imc_ss_handshake_w_rom.instr_ack_rom
 @22
 rv32imc_ss_handshake_w_rom.rom_dpath_addr[9:0]
@@ -177,5 +181,13 @@ gpio_i[2][31:0]
 [color] 7
 gpio_o[2][31:0]
 rv32imc_ss_handshake_w_rom.data_data_i_int_rom[31:0]
+@28
+rv32imc_ss_handshake_w_rom.inst_hart.id_error
+rv32imc_ss_handshake_w_rom.inst_hart.if_valid
+rv32imc_ss_handshake_w_rom.inst_hart.inst_stall.enable_mut_if
+rv32imc_ss_handshake_w_rom.inst_hart.inst_stall.enable_mut_if_next
+rv32imc_ss_handshake_w_rom.inst_hart.double_fault
+@29
+rv32imc_ss_handshake_w_rom.inst_hart.enable_mut_pc
 [pattern_trace] 1
 [pattern_trace] 0

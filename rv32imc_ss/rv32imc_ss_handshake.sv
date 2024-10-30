@@ -187,6 +187,7 @@ module rv32imc_ss_handshake #(
       .clk  (clk  ),
       .reset(reset),
 
+      .if_stall(!if_valid),
       .is_instr_new   (if_valid && !double_fault),
       .is_mem_or_io   (is_mem_or_io),
       .is_branch_taken(branch_taken),
